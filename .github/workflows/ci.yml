@@ -66,9 +66,6 @@ jobs:
       matrix:
         stack: ["2.5.1"]
         ghc: ["8.10.4"]
-    defaults:
-      run:
-        shell: bash
 
     steps:
     - uses: actions/checkout@v2
