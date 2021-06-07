@@ -41,7 +41,8 @@ data Term n a
     -- annotation uses the current scope, which means that behavior is similar
     -- to -XScopedTypeVariables.
     TyAnn (Term n a) (Term n a)
-  | Pi (Scope (Name n ()) (Term n) a)
+  | -- | Pi binders/forall requires an explicit domain to quantify over.
+    Pi (Term n a) (Scope (Name n ()) (Term n) a)
   | Lam (Scope (Name n ()) (Term n) a)
   | App (Term n a) (Term n a)
   deriving (Functor, Foldable, Traversable, Generic)
@@ -56,7 +57,7 @@ instance Monad (Term n) where
   Universe n >>= _ = Universe n
   Var v >>= f = f v
   TyAnn a b >>= f = TyAnn (a >>= f) (b >>= f)
-  Pi s >>= f = Pi (s >>>= f)
+  Pi d s >>= f = Pi (d >>= f) (s >>>= f)
   Lam s >>= f = Lam (s >>>= f)
   App a b >>= f = App (a >>= f) (b >>= f)
 
@@ -77,5 +78,5 @@ lam :: Eq n => n -> Term n n -> Term n n
 lam n e = Lam (abstract1Name n e)
 
 -- | pnemonic: pi-binder; name is not just pi to avoid conflict with pi :: Float
-pib :: Eq n => n -> Term n n -> Term n n
-pib n e = Pi (abstract1Name n e)
+pib :: Eq n => n -> Term n n -> Term n n -> Term n n
+pib n d e = Pi d (abstract1Name n e)

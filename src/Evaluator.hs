@@ -18,7 +18,7 @@ nf (Constructor dc) = pure $ Constructor dc
 nf (Universe n) = pure $ Universe n
 nf (Var x) = pure $ Var x
 nf (TyAnn a b) = nf a
-nf (Pi s) = Pi . toScope <$> nf (fromScope s)
+nf (Pi d s) = (Pi <$> nf d) <*> (toScope <$> nf (fromScope s))
 nf (Lam s) = Lam . toScope <$> nf (fromScope s)
 nf (App f a) = do
   f' <- whnf f

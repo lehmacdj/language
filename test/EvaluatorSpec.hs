@@ -13,7 +13,7 @@ test_nf =
       -- isn't actually very problematic in practice
       (lam "x" (lam "y" (Var "x")) `App` Var "y") `hasNf` lam "x" (Var "y"),
       -- evaluation still happens under Pi and Lam
-      pib "z" (lam "x" (Var "x") `App` Var "y") `hasNf` pib "z" (Var "y"),
+      pib "z" (Universe 0) (lam "x" (Var "x") `App` Var "y") `hasNf` pib "z" (Universe 0) (Var "y"),
       lam "z" (lam "x" (Var "x") `App` Var "y") `hasNf` lam "z" (Var "y")
     ]
   where
@@ -29,7 +29,7 @@ test_whnf =
       -- isn't actually very problematic in practice
       (lam "x" (lam "y" (Var "x")) `App` Var "y") `hasWhnf` lam "x" (Var "y"),
       -- whnf doesn't evaluate under Pi and Lam
-      pib "z" (lam "x" (Var "x") `App` Var "y") `hasWhnf` pib "z" (lam "x" (Var "x") `App` Var "y"),
+      pib "z" (Universe 0) (lam "x" (Var "x") `App` Var "y") `hasWhnf` pib "z" (Universe 0) (lam "x" (Var "x") `App` Var "y"),
       lam "z" (lam "x" (Var "x") `App` Var "y") `hasWhnf` lam "z" (lam "x" (Var "x") `App` Var "y")
     ]
   where
