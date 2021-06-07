@@ -2,11 +2,31 @@ module TyCheck where
 
 import AST
 import ClassyPrelude
+import Control.Monad.Error.Class
+import Control.Monad.State.Class
+import Evaluator
 
 data TypeError
   = TypeVariableNotInScope Text
+  | RuntimeErrorWhileEvaluatingType RuntimeError
   | OtherTypeError Text
   deriving (Show, Eq, Generic)
+
+data TypeEnvironment = TypeEnvironment
+
+-- | Given a term without a type
+inferType ::
+  (MonadState TypeEnvironment m, MonadError TypeError m) =>
+  Term n a ->
+  m (Term n a)
+inferType = undefined
+
+typeCheck ::
+  (MonadState TypeEnvironment m, MonadError TypeError m) =>
+  Term n a ->
+  Term n a ->
+  m ()
+typeCheck = undefined
 
 --
 -- type TyEnv = Map Var Type
