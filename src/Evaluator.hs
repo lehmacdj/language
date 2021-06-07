@@ -13,8 +13,6 @@ data RuntimeError
 
 -- | reduce a 'Term' to normal form using a lazy evaluation strategy
 nf :: (MonadError RuntimeError m, Show a) => Term' a -> m (Term' a)
-nf (BaseType bt) = pure $ BaseType bt
-nf (Constructor dc) = pure $ Constructor dc
 nf (Universe n) = pure $ Universe n
 nf (Var x) = pure $ Var x
 nf (TyAnn a b) = nf a

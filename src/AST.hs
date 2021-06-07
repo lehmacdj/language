@@ -13,12 +13,6 @@ import Numeric.Natural
 
 -- * definitions and instances
 
-data BaseType = UnitTy
-  deriving (Show, Eq, Generic)
-
-data DataConstructor = Unit
-  deriving (Show, Eq, Generic)
-
 -- | Terms.
 --
 -- Enhancements to implement in the future:
@@ -28,10 +22,12 @@ data DataConstructor = Unit
 -- ineffective for terms.
 -- * Dynamic type. A magic type that allows any term to be well typed.
 -- * Undefined. An error value with type "forall a. a"
+-- * Primitive types. Direct haskell implementations of things, instead of
+-- encoding everything as Pi explicitly. This should also allow us to create
+-- some slightly more interesting types like equality, which I'm not sure
+-- it is possible to encode.
 data Term n a
-  = BaseType BaseType
-  | Constructor DataConstructor
-  | -- | The type of types. Universes should be interpreted to be cummulative.
+  = -- | The type of types. Universes should be interpreted to be cummulative.
     -- That is if x : Type i and i < j then x : Type j as well.
     Universe Natural
   | Var a
@@ -52,8 +48,6 @@ instance Applicative (Term n) where
   (<*>) = Control.Monad.ap
 
 instance Monad (Term n) where
-  BaseType bt >>= _ = BaseType bt
-  Constructor dc >>= _ = Constructor dc
   Universe n >>= _ = Universe n
   Var v >>= f = f v
   TyAnn a b >>= f = TyAnn (a >>= f) (b >>= f)
