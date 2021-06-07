@@ -7,8 +7,6 @@ import Bound.Name
 import ClassyPrelude
 import qualified Control.Monad
 import Data.Deriving
-import Data.Functor.Classes
-import GHC.Generics
 import Numeric.Natural
 
 -- * definitions and instances

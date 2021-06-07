@@ -2,7 +2,6 @@ module Evaluator where
 
 import AST
 import Bound
-import Bound.Name
 import ClassyPrelude
 import Control.Monad.Error.Class
 
@@ -15,7 +14,7 @@ data RuntimeError
 nf :: (MonadError RuntimeError m, Show a) => Term' a -> m (Term' a)
 nf (Universe n) = pure $ Universe n
 nf (Var x) = pure $ Var x
-nf (TyAnn a b) = nf a
+nf (TyAnn a _) = nf a
 nf (Pi d s) = (Pi <$> nf d) <*> (toScope <$> nf (fromScope s))
 nf (Lam s) = Lam . toScope <$> nf (fromScope s)
 nf (App f a) = do
@@ -30,6 +29,6 @@ whnf (App f a) = do
   f' <- whnf f
   case f' of
     Lam s -> whnf $ instantiate1 a s
-    Var x -> pure $ App f a
+    Var _ -> pure $ App f a
     _ -> throwError . InvalidApplicationOf $ tshow f'
 whnf t = pure t

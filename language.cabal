@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 3a419a17ce0c5d717172cbd2b9d7fb8fb738dbb52e3a8f0bff647c047432413f
+-- hash: acd8dc13a327d02011ace491d94cb7c1b435f1a8bda409c9da4b5b4064b59f66
 
 name:           language
 version:        0.1.0.0
@@ -36,6 +36,7 @@ library
   hs-source-dirs:
       src
   default-extensions: DataKinds DeriveFunctor DeriveGeneric DeriveTraversable DeriveFoldable FlexibleContexts GADTs LambdaCase NoImplicitPrelude OverloadedStrings PolyKinds RankNTypes ScopedTypeVariables TypeApplications TypeFamilies TypeOperators
+  ghc-options: -Wall
   build-depends:
       base >=4.7 && <5
     , bound
@@ -58,7 +59,7 @@ executable language-exe
   hs-source-dirs:
       app
   default-extensions: DataKinds DeriveFunctor DeriveGeneric DeriveTraversable DeriveFoldable FlexibleContexts GADTs LambdaCase NoImplicitPrelude OverloadedStrings PolyKinds RankNTypes ScopedTypeVariables TypeApplications TypeFamilies TypeOperators
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
     , bound
@@ -86,7 +87,7 @@ test-suite language-test
   hs-source-dirs:
       test
   default-extensions: DataKinds DeriveFunctor DeriveGeneric DeriveTraversable DeriveFoldable FlexibleContexts GADTs LambdaCase NoImplicitPrelude OverloadedStrings PolyKinds RankNTypes ScopedTypeVariables TypeApplications TypeFamilies TypeOperators
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
     , bound
