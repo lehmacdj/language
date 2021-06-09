@@ -17,7 +17,7 @@ test_nf =
       lam "z" (lam "x" (Var "x") `App` Var "y") `hasNf` lam "z" (Var "y")
     ]
   where
-    hasNf :: Term' Text -> Term' Text -> TestTree
+    hasNf :: Term' -> Term' -> TestTree
     t `hasNf` r = testCase ("nf $ " ++ show t) $ nf t @=? Right r
 
 test_whnf :: TestTree
@@ -33,5 +33,5 @@ test_whnf =
       lam "z" (lam "x" (Var "x") `App` Var "y") `hasWhnf` lam "z" (lam "x" (Var "x") `App` Var "y")
     ]
   where
-    hasWhnf :: Term' Text -> Term' Text -> TestTree
+    hasWhnf :: Term' -> Term' -> TestTree
     t `hasWhnf` r = testCase ("whnf $ " ++ show t) $ whnf t @=? Right r

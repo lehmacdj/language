@@ -5,6 +5,7 @@ module AST where
 import Bound
 import Bound.Name
 import ClassyPrelude
+import Control.Lens
 import qualified Control.Monad
 import Data.Deriving
 import Numeric.Natural
@@ -57,11 +58,13 @@ $(deriveEq1 ''Term)
 $(deriveShow1 ''Term)
 $(deriveEq ''Term)
 $(deriveShow ''Term)
+$(makePrisms ''Term)
 
 -- * type aliases
 
--- | A simple term, using 'Text' to represent variables.
-type Term' a = Term Text a
+-- | A simple term, using 'Text' to represent variables. This is what the AST
+-- looks like when it is parsed.
+type Term' = Term Text Text
 
 -- * smart constructors
 -- These bypass using abstract1Name explicitly, making constructing terms easier.
