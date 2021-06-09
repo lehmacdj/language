@@ -1,6 +1,6 @@
 module Main where
 
-import ClassyPrelude
+import MyPrelude
 
 main :: IO ()
 main = undefined

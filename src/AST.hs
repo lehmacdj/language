@@ -4,7 +4,7 @@ module AST where
 
 import Bound
 import Bound.Name
-import ClassyPrelude
+import MyPrelude
 import Control.Lens
 import qualified Control.Monad
 import Data.Deriving

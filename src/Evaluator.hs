@@ -2,7 +2,7 @@ module Evaluator where
 
 import AST
 import Bound
-import ClassyPrelude
+import MyPrelude
 import Control.Monad.Error.Class
 
 data RuntimeError

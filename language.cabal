@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: acd8dc13a327d02011ace491d94cb7c1b435f1a8bda409c9da4b5b4064b59f66
+-- hash: c22e1ed4985877cb156158ffb0f0b0455aa85e1e681d523739a35350686ecb90
 
 name:           language
 version:        0.1.0.0
@@ -29,6 +29,7 @@ library
   exposed-modules:
       AST
       Evaluator
+      MyPrelude
       Parser
       TyCheck
   other-modules:

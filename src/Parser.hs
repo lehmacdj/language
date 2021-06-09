@@ -1,7 +1,7 @@
 module Parser where
 
 import AST
-import ClassyPrelude
+import MyPrelude
 import Control.Monad.Combinators.Expr
 import Data.Void
 import Text.Megaparsec
