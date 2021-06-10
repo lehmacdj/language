@@ -4,10 +4,10 @@ module AST where
 
 import Bound
 import Bound.Name
-import MyPrelude
 import Control.Lens
 import qualified Control.Monad
 import Data.Deriving
+import MyPrelude
 import Numeric.Natural
 
 -- * definitions and instances
@@ -20,7 +20,6 @@ import Numeric.Natural
 -- attempt at guessing such holes, although it probably will be extremely
 -- ineffective for terms.
 -- * Dynamic type. A magic type that allows any term to be well typed.
--- * Undefined. An error value with type "forall a. a"
 -- * Primitive types. Direct haskell implementations of things, instead of
 -- encoding everything as Pi explicitly. This should also allow us to create
 -- some slightly more interesting types like equality, which I'm not sure
@@ -29,6 +28,9 @@ data Term n a
   = -- | The type of types. Universes should be interpreted to be cummulative.
     -- That is if x : Type i and i < j then x : Type j as well.
     Universe Natural
+  | -- | A term that has type forall a. a; obviously this is unsound, but it
+    -- is useful for introducing axioms + some other special purpose uses.
+    Magic
   | Var a
   | -- | Type annotation. Specifies that a term should have a specific type.
     -- When extending to include general comonadic annotations, they should
@@ -48,6 +50,7 @@ instance Applicative (Term n) where
 
 instance Monad (Term n) where
   Universe n >>= _ = Universe n
+  Magic >>= _ = Magic
   Var v >>= f = f v
   TyAnn a b >>= f = TyAnn (a >>= f) (b >>= f)
   Pi d s >>= f = Pi (d >>= f) (s >>>= f)

@@ -33,6 +33,7 @@ data TypeError
     -- but is inferred as having second term
     ApplicationToTermWithoutFunctionType Term' Term'
   | UnannotatedLambdaExpression Term'
+  | UnannotatedMagic
   | -- | Type mismatch while typechecking first term. Expected second term
     -- doesn't match inferred type third term
     TypeMismatch Term' Term' Term'
@@ -76,6 +77,7 @@ inferType ::
   m Term'
 inferType = \case
   Universe n -> pure $ Universe (succ n)
+  Magic -> throwError UnannotatedMagic
   Var v -> throwError $ TypeVariableNotInScope v
   TyAnn t ty -> typeCheck t ty >> pure ty
   Pi d s -> do
@@ -86,7 +88,7 @@ inferType = \case
             _ -> throwError $ NonUniverseType (PiDomain (Pi d s)) dTy
         codomainUniverseLevel = do
           d' <- subsumeRuntimeError $ nf d
-          sTy <- inferType (instantiate1 d' s)
+          sTy <- inferType (instantiate1 (Magic `TyAnn` d') s)
           case sTy of
             Universe n -> pure n
             _ -> throwError $ NonUniverseType (PiCodomain (Pi d s)) sTy
@@ -103,7 +105,7 @@ inferType = \case
       Pi d s -> pure (d, s)
       _ -> throwError $ ApplicationToTermWithoutFunctionType (App a b) aTy
     typeCheck b domainTy
-    pure $ instantiate1 b rangeTyScope
+    pure $ instantiate1 (Magic `TyAnn` b) rangeTyScope
 
 -- | Does the term (first arg) have the specified type (second arg).
 typeCheck ::
@@ -112,11 +114,12 @@ typeCheck ::
   Term' ->
   m ()
 typeCheck t ty = case t of
+  Magic -> pure ()
   Lam s -> do
     _ <- assertHasUniverseType (TypeAssertion t ty) ty
     tyTy <- subsumeRuntimeError $ nf ty
     case tyTy of
-      Pi d c -> typeCheck (instantiate1 d s) (instantiate1 d c)
+      Pi d c -> typeCheck (instantiate1 (Magic `TyAnn` d) s) (instantiate1 (Magic `TyAnn` d) c)
       _ -> throwError $ LambdaWithNonPiType (Lam s) tyTy
   _ -> do
     let inferredTermTyNf = do

@@ -2,8 +2,8 @@ module Evaluator where
 
 import AST
 import Bound
-import MyPrelude
 import Control.Monad.Error.Class
+import MyPrelude
 
 data RuntimeError
   = InvalidApplicationOf Term'
@@ -13,6 +13,7 @@ data RuntimeError
 -- | reduce a 'Term' to normal form using a lazy evaluation strategy
 nf :: (MonadError RuntimeError m, Show a) => Term Text a -> m (Term Text a)
 nf (Universe n) = pure $ Universe n
+nf Magic = pure Magic
 nf (Var x) = pure $ Var x
 nf (TyAnn a _) = nf a
 nf (Pi d s) = (Pi <$> nf d) <*> (toScope <$> nf (fromScope s))

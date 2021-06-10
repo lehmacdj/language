@@ -82,3 +82,5 @@ tests:
     - tasty-hunit
     - tasty-discover
     - tasty-golden
+    - tasty-quickcheck
+    - quickcheck-instances

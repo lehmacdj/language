@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: c22e1ed4985877cb156158ffb0f0b0455aa85e1e681d523739a35350686ecb90
+-- hash: 5a88cd9d94fda09cc2f276e9187d0819a3520978ec6c9fe8254cda40042c8699
 
 name:           language
 version:        0.1.0.0
@@ -83,7 +83,7 @@ test-suite language-test
   other-modules:
       EvaluatorSpec
       TestPrelude
-      TypeCheckerSpec
+      TyCheckerSpec
       Paths_language
   hs-source-dirs:
       test
@@ -101,10 +101,12 @@ test-suite language-test
     , megaparsec
     , mtl
     , parser-combinators
+    , quickcheck-instances
     , tasty
     , tasty-discover
     , tasty-golden
     , tasty-hunit
+    , tasty-quickcheck
     , text
     , unliftio
   default-language: Haskell2010
