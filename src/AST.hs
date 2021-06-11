@@ -24,6 +24,8 @@ import Numeric.Natural
 -- encoding everything as Pi explicitly. This should also allow us to create
 -- some slightly more interesting types like equality, which I'm not sure
 -- it is possible to encode.
+-- * Algebraic data types / homotopy types / records. Some kinds of stronger
+-- more built in types.
 data Term n a
   = -- | The type of types. Universes should be interpreted to be cummulative.
     -- That is if x : Type i and i < j then x : Type j as well.
