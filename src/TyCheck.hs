@@ -114,6 +114,8 @@ typeCheck ::
   Term' ->
   m ()
 typeCheck t ty = case t of
+  -- Magic is allowed to have any syntactically valid type, even if it isn't
+  -- a valid type for other purposes
   Magic -> pure ()
   Lam s -> do
     _ <- assertHasUniverseType (TypeAssertion t ty) ty
