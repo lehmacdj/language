@@ -12,6 +12,16 @@ import Numeric.Natural
 
 -- * definitions and instances
 
+-- | To be able to have variables that are unnamed (e.g. for cases where there
+-- must be no captures of the variable, i.e. when translating a -> b to a pi
+-- binder), but still have name data for variables that are bound (see:
+-- 'Bound.Name' we need to be able to not store a name with a bound termala
+-- 'Name' but want it to also be possible for it to be missing.
+type BoundName n = Name (Maybe n) ()
+
+abstract1BoundName :: (Monad f, Eq a) => a -> f a -> Scope (BoundName a) f a
+abstract1BoundName n = abstract (\x -> if x == n then Just (Name (Just n) ()) else Nothing)
+
 -- | Terms.
 --
 -- Enhancements to implement in the future:
@@ -41,8 +51,8 @@ data Term n a
     -- to -XScopedTypeVariables.
     TyAnn (Term n a) (Term n a)
   | -- | Pi binders/forall requires an explicit domain to quantify over.
-    Pi (Term n a) (Scope (Name n ()) (Term n) a)
-  | Lam (Scope (Name n ()) (Term n) a)
+    Pi (Term n a) (Scope (BoundName n) (Term n) a)
+  | Lam (Scope (BoundName n) (Term n) a)
   | App (Term n a) (Term n a)
   deriving (Functor, Foldable, Traversable, Generic)
 
@@ -75,8 +85,15 @@ type Term' = Term Text Text
 -- These bypass using abstract1Name explicitly, making constructing terms easier.
 
 lam :: Eq n => n -> Term n n -> Term n n
-lam n e = Lam (abstract1Name n e)
+lam n e = Lam (abstract1BoundName n e)
 
 -- | pnemonic: pi-binder; name is not just pi to avoid conflict with pi :: Float
 pib :: Eq n => n -> Term n n -> Term n n -> Term n n
-pib n d e = Pi d (abstract1Name n e)
+pib n d e = Pi d (abstract1BoundName n e)
+
+-- | for constructing non dependent function types. Use of fromJustEx is safe
+-- because abstractName1 removes all instances of Nothing from the input and
+-- because there was no nothing in the first place because the term was produced
+-- by mapping with Just.
+arrow :: Eq n => Term n n -> Term n n -> Term n n
+arrow d e = Pi d (fmap fromJustEx (abstract1Name Nothing (fmap Just e)))

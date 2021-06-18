@@ -1,11 +1,13 @@
 module MyPrelude
   ( module ClassyPrelude,
     module MyPrelude,
+    HasCallStack,
   )
 where
 
 import ClassyPrelude
 import Control.Monad.Except
+import GHC.Stack
 
 subsumeError ::
   MonadError f n =>
@@ -40,3 +42,8 @@ subsumeNothing ::
   Maybe a ->
   m a
 subsumeNothing e = maybe (throwError e) pure
+
+fromJustEx :: HasCallStack => Maybe a -> a
+fromJustEx = \case
+  Just x -> x
+  Nothing -> error "expected Just but was Nothing"
