@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 4e3430a865f8c48df2e2df851498562cf8761a3c885f9104dbdb5f81132b074a
+-- hash: eca9cd94972f6fcbf4b2f93afa963017da97a70d5360a689cb06fa915974cd60
 
 name:           language
 version:        0.1.0.0
@@ -114,6 +114,7 @@ test-suite language-test
   main-is: Spec.hs
   other-modules:
       EvaluatorSpec
+      ParserSpec
       TestPrelude
       TyCheckerSpec
       Paths_language
