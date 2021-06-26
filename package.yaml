@@ -1,23 +1,20 @@
 name:                language
+synopsis:            Devin's language experiments.
 version:             0.1.0.0
+category:            Language
 github:              "lehmacdj/language"
 license:             BSD3
 author:              "Devin Lehmacher"
 maintainer:          "lehmacdj@gmail.com"
-copyright:           "Copyright: (c) 2017 Devin Lehmacher"
-
+copyright:           "(c) 2021 Devin Lehmacher"
 extra-source-files:
 - README.md
 - ChangeLog.md
-
-# Metadata used when publishing your package
-# synopsis:            Short description of your package
-# category:            Miscellaneous
-
-# To avoid duplicated efforts in documentation and dealing with the
-# complications of embedding Haddock markup inside cabal files, it is
-# common to point users to the README.md file.
-description:         Please see the README on GitHub at <https://github.com/lehmacdj/language#readme>
+description:
+  Home of my language experiments. Except where otherwise impossible I try to
+  implement all features I'm interested in experimenting with in a single
+  language. Please see the README on GitHub at
+  <https://github.com/lehmacdj/language#readme> for further information.
 
 dependencies:
 - base >= 4.7 && < 5
@@ -30,6 +27,9 @@ dependencies:
 - megaparsec
 - mtl
 - parser-combinators
+- polysemy
+- polysemy-plugin
+- polysemy-readline
 - text
 - unliftio
 
@@ -53,6 +53,10 @@ default-extensions:
 
 ghc-options:
 - -Wall
+- -Wincomplete-uni-patterns
+- -fplugin=Polysemy.Plugin
+- -flate-specialise
+- -fspecialise-aggressively
 
 library:
   source-dirs: src
