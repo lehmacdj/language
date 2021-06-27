@@ -2,16 +2,20 @@ module TyCheckerSpec where
 
 import AST
 import Data.List.NonEmpty (NonEmpty (..))
+import Polysemy.Error
 import Test.QuickCheck.Instances.Natural ()
 import TestPrelude
 import TyCheck
+
+runE :: Sem '[Error e] a -> Either e a
+runE = run . runError
 
 test_inferType :: TestTree
 test_inferType =
   testGroup
     "inferType"
     [ testProperty "Universe n : Universe (n + 1)" $
-        \n -> inferType (Universe n) === Right (Universe (n + 1)),
+        \n -> runE (inferType (Universe n)) === Right (Universe (n + 1)),
       Magic `throwsError` UnannotatedMagic,
       (Magic `TyAnn` Magic) `infersType` Magic,
       Var "x" `throwsError` TypeVariableNotInScope "x",
@@ -27,8 +31,8 @@ test_inferType =
       let t = Universe 0 `App` Universe 0 in t `throwsError` ApplicationToTermWithoutFunctionType t (Universe 1)
     ]
   where
-    infersType t ty = testCase ("inferType $ " ++ show t) $ inferType t @?= Right ty
-    throwsError t err = testCase ("inferType $ " ++ show t) $ inferType t @?= Left err
+    infersType t ty = testCase ("inferType $ " ++ show t) $ runE (inferType t) @?= Right ty
+    throwsError t err = testCase ("inferType $ " ++ show t) $ runE (inferType t) @?= Left err
 
 test_typeCheck :: TestTree
 test_typeCheck =
@@ -49,5 +53,5 @@ test_typeCheck =
       let t = (Magic `TyAnn` Universe 1) in throwsError t (Universe 0) $ TypeMismatch t (Universe 0) (Universe 1)
     ]
   where
-    hasType t ty = testCase (show t ++ " : " ++ show ty) $ typeCheck t ty @?= Right ()
-    throwsError t ty err = testCase (show t ++ " : " ++ show ty) $ typeCheck t ty @?= Left err
+    hasType t ty = testCase (show t ++ " : " ++ show ty) $ runE (typeCheck t ty) @?= Right ()
+    throwsError t ty err = testCase (show t ++ " : " ++ show ty) $ runE (typeCheck t ty) @?= Left err

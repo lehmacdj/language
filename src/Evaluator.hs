@@ -2,8 +2,8 @@ module Evaluator where
 
 import AST
 import Bound
-import Control.Monad.Error.Class
 import MyPrelude
+import Polysemy.Error
 
 data RuntimeError
   = InvalidApplicationOf Term'
@@ -11,7 +11,10 @@ data RuntimeError
   deriving (Show, Eq, Generic)
 
 -- | reduce a 'Term' to normal form using a lazy evaluation strategy
-nf :: (MonadError RuntimeError m, Show a) => Term Text a -> m (Term Text a)
+nf ::
+  (Member (Error RuntimeError) r, Show a) =>
+  Term Text a ->
+  Sem r (Term Text a)
 nf (Universe n) = pure $ Universe n
 nf Magic = pure Magic
 nf (Var x) = pure $ Var x
@@ -23,13 +26,16 @@ nf (App f a) = do
   case f' of
     Lam s -> nf $ instantiate1 a s
     Var x -> pure $ App (Var x) a
-    _ -> throwError . InvalidApplicationOf $ tshow <$> f'
+    _ -> throw . InvalidApplicationOf $ tshow <$> f'
 
-whnf :: (MonadError RuntimeError m, Show a) => Term Text a -> m (Term Text a)
+whnf ::
+  (Member (Error RuntimeError) r, Show a) =>
+  Term Text a ->
+  Sem r (Term Text a)
 whnf (App f a) = do
   f' <- whnf f
   case f' of
     Lam s -> whnf $ instantiate1 a s
     Var _ -> pure $ App f a
-    _ -> throwError . InvalidApplicationOf $ tshow <$> f'
+    _ -> throw . InvalidApplicationOf $ tshow <$> f'
 whnf t = pure t

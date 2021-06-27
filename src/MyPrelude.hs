@@ -1,13 +1,19 @@
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+
 module MyPrelude
   ( module ClassyPrelude,
     module MyPrelude,
     HasCallStack,
+    module Polysemy,
   )
 where
 
-import ClassyPrelude
+import ClassyPrelude hiding (try)
 import Control.Monad.Except
 import GHC.Stack
+import Polysemy
+import Polysemy.Error
 
 subsumeError ::
   MonadError f n =>
@@ -20,28 +26,19 @@ subsumeError f c = do
     Left e -> throwError $ f e
     Right r -> pure r
 
--- | sequence two errors combining with a semigroup instance instead of
--- swallowing one, similarly to how validation operates but more generally
 errorsParallelly ::
-  (MonadError e m, Semigroup e) =>
-  ExceptT e m a ->
-  ExceptT e m b ->
-  m (a, b)
+  (Member (Error e) r, Semigroup e) =>
+  Sem r a ->
+  Sem r b ->
+  Sem r (a, b)
 errorsParallelly a b = do
-  a' <- runExceptT a
-  b' <- runExceptT b
+  a' <- try a
+  b' <- try b
   case (a', b') of
-    (Left e, Left f) -> throwError (e <> f)
-    (Left e, _) -> throwError e
-    (_, Left f) -> throwError f
+    (Left e, Left f) -> throw (e <> f)
+    (Left e, _) -> throw e
+    (_, Left f) -> throw f
     (Right a'', Right b'') -> pure (a'', b'')
-
-subsumeNothing ::
-  MonadError e m =>
-  e ->
-  Maybe a ->
-  m a
-subsumeNothing e = maybe (throwError e) pure
 
 fromJustEx :: HasCallStack => Maybe a -> a
 fromJustEx = \case

@@ -2,8 +2,12 @@ module EvaluatorSpec where
 
 import AST
 import Evaluator
+import Polysemy.Error
 import Test.QuickCheck.Instances.Natural ()
 import TestPrelude
+
+runE :: Sem '[Error e] a -> Either e a
+runE = run . runError
 
 test_nf :: TestTree
 test_nf =
@@ -18,11 +22,11 @@ test_nf =
       lam "z" (lam "x" (Var "x") `App` Var "y") `hasNf` lam "z" (Var "y"),
       Magic `hasNf` Magic,
       testProperty "Universe n is in normal form" $ \n ->
-        nf (Universe n) === Right (Universe n :: Term')
+        runE (nf (Universe n)) === Right (Universe n :: Term')
     ]
   where
     hasNf :: Term' -> Term' -> TestTree
-    t `hasNf` r = testCase ("nf $ " ++ show t) $ nf t @?= Right r
+    t `hasNf` r = testCase ("nf $ " ++ show t) $ runE (nf t) @?= Right r
 
 test_whnf :: TestTree
 test_whnf =
@@ -37,8 +41,8 @@ test_whnf =
       lam "z" (lam "x" (Var "x") `App` Var "y") `hasWhnf` lam "z" (lam "x" (Var "x") `App` Var "y"),
       Magic `hasWhnf` Magic,
       testProperty "Universe n is in weak-head normal form" $ \n ->
-        whnf (Universe n) === Right (Universe n :: Term')
+        runE (whnf (Universe n)) === Right (Universe n :: Term')
     ]
   where
     hasWhnf :: Term' -> Term' -> TestTree
-    t `hasWhnf` r = testCase ("whnf $ " ++ show t) $ whnf t @?= Right r
+    t `hasWhnf` r = testCase ("whnf $ " ++ show t) $ runE (whnf t) @?= Right r

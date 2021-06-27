@@ -2,11 +2,11 @@ module TyCheck where
 
 import AST
 import Bound
-import Control.Monad.Error.Class
 import Data.List.NonEmpty (NonEmpty (..))
 import Evaluator
 import MyPrelude
 import Numeric.Natural
+import Polysemy.Error
 
 data UniverseTypeCheckingContext
   = -- | domain of a pi type + the pi type
@@ -52,67 +52,67 @@ instance Semigroup TypeError where
   e <> f = MultipleTypeErrors (e :| [f])
 
 subsumeRuntimeError ::
-  MonadError TypeError n =>
-  (forall m. MonadError RuntimeError m => m a) ->
-  n a
-subsumeRuntimeError = subsumeError RuntimeErrorWhileEvaluatingType
+  Member (Error TypeError) r =>
+  Sem (Error RuntimeError : r) a ->
+  Sem r a
+subsumeRuntimeError = mapError RuntimeErrorWhileEvaluatingType
 
 assertHasUniverseType ::
-  MonadError TypeError m =>
+  Member (Error TypeError) r =>
   UniverseTypeCheckingContext ->
   Term' ->
-  m Natural
+  Sem r Natural
 assertHasUniverseType context t = do
   tTy <- inferType t
   case tTy of
     Universe n -> pure n
-    _ -> throwError $ NonUniverseType context tTy
+    _ -> throw $ NonUniverseType context tTy
 
 -- | Given a term without a type compute its type + ensure that it is well typed
 -- with that inferred type. Type inference may fail with an ambiguous type
 -- error.
 inferType ::
-  (MonadError TypeError m) =>
+  Member (Error TypeError) r =>
   Term' ->
-  m Term'
+  Sem r Term'
 inferType = \case
   Universe n -> pure $ Universe (succ n)
-  Magic -> throwError UnannotatedMagic
-  Var v -> throwError $ TypeVariableNotInScope v
+  Magic -> throw UnannotatedMagic
+  Var v -> throw $ TypeVariableNotInScope v
   TyAnn t ty -> typeCheck t ty >> pure ty
   Pi d s -> do
     let domainUniverseLevel = do
           dTy <- inferType d
           case dTy of
             Universe n -> pure n
-            _ -> throwError $ NonUniverseType (PiDomain (Pi d s)) dTy
+            _ -> throw $ NonUniverseType (PiDomain (Pi d s)) dTy
         codomainUniverseLevel = do
           d' <- subsumeRuntimeError $ nf d
           sTy <- inferType (instantiate1 (Magic `TyAnn` d') s)
           case sTy of
             Universe n -> pure n
-            _ -> throwError $ NonUniverseType (PiCodomain (Pi d s)) sTy
+            _ -> throw $ NonUniverseType (PiCodomain (Pi d s)) sTy
     (domainUniverseLevel', codomainUniverseLevel') <-
       errorsParallelly domainUniverseLevel codomainUniverseLevel
     -- if both the domain and codomain are <= Universe i then we can type the
     -- function space as Universe i, by instead typing the domain and codomain
     -- each as Universe i
     pure $ Universe (max domainUniverseLevel' codomainUniverseLevel')
-  Lam s -> throwError $ UnannotatedLambdaExpression (Lam s)
+  Lam s -> throw $ UnannotatedLambdaExpression (Lam s)
   App a b -> do
     aTy <- inferType a
     (domainTy, rangeTyScope) <- case aTy of
       Pi d s -> pure (d, s)
-      _ -> throwError $ ApplicationToTermWithoutFunctionType (App a b) aTy
+      _ -> throw $ ApplicationToTermWithoutFunctionType (App a b) aTy
     typeCheck b domainTy
     pure $ instantiate1 (Magic `TyAnn` b) rangeTyScope
 
 -- | Does the term (first arg) have the specified type (second arg).
 typeCheck ::
-  (MonadError TypeError m) =>
+  Member (Error TypeError) r =>
   Term' ->
   Term' ->
-  m ()
+  Sem r ()
 typeCheck t ty = case t of
   -- Magic is allowed to have any syntactically valid type, even if it isn't
   -- a valid type for other purposes
@@ -122,7 +122,7 @@ typeCheck t ty = case t of
     tyTy <- subsumeRuntimeError $ nf ty
     case tyTy of
       Pi d c -> typeCheck (instantiate1 (Magic `TyAnn` d) s) (instantiate1 (Magic `TyAnn` d) c)
-      _ -> throwError $ LambdaWithNonPiType (Lam s) tyTy
+      _ -> throw $ LambdaWithNonPiType (Lam s) tyTy
   _ -> do
     let inferredTermTyNf = do
           tTy <- inferType t
@@ -135,4 +135,4 @@ typeCheck t ty = case t of
     (inferredTermTyNf', wellTypedTyNf') <-
       errorsParallelly inferredTermTyNf wellTypedTyNf
     unless (inferredTermTyNf' == wellTypedTyNf') $
-      throwError $ TypeMismatch t ty inferredTermTyNf'
+      throw $ TypeMismatch t ty inferredTermTyNf'
