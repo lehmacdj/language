@@ -31,6 +31,7 @@ library
       Evaluator
       MyPrelude
       Parser
+      Repl
       TyCheck
   other-modules:
       Paths_language
@@ -68,6 +69,8 @@ library
     , polysemy
     , polysemy-plugin
     , polysemy-readline
+    , prettyprinter
+    , prettyprinter-ansi-terminal
     , text
     , unliftio
   default-language: Haskell2010
@@ -111,6 +114,8 @@ executable language-exe
     , polysemy
     , polysemy-plugin
     , polysemy-readline
+    , prettyprinter
+    , prettyprinter-ansi-terminal
     , text
     , unliftio
   default-language: Haskell2010
@@ -159,6 +164,8 @@ test-suite language-test
     , polysemy
     , polysemy-plugin
     , polysemy-readline
+    , prettyprinter
+    , prettyprinter-ansi-terminal
     , quickcheck-instances
     , tasty
     , tasty-discover

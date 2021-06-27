@@ -4,11 +4,15 @@ import AST
 import Bound
 import MyPrelude
 import Polysemy.Error
+import Prettyprinter
 
 data RuntimeError
   = InvalidApplicationOf Term'
   | OtherRuntimeError Text
   deriving (Show, Eq, Generic)
+
+instance Pretty RuntimeError where
+  pretty = viaShow
 
 -- | reduce a 'Term' to normal form using a lazy evaluation strategy
 nf ::

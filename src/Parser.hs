@@ -5,13 +5,20 @@ module Parser where
 import AST
 import Control.Monad.Combinators.Expr
 import Data.Void
-import MyPrelude hiding (try)
+import MyPrelude
 import Numeric.Natural
-import Text.Megaparsec hiding (many, sepBy1)
+import Prettyprinter (Pretty (..))
+import Text.Megaparsec hiding (ParseError, many, sepBy1)
 import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
 
 type Parser = Parsec Void Text
+
+newtype ParseError = ParseError {unParseError :: ParseErrorBundle Text Void}
+  deriving (Show, Eq, Generic)
+
+instance Pretty ParseError where
+  pretty = pretty . errorBundlePretty . unParseError
 
 s :: Parser ()
 s = L.space space1 empty empty

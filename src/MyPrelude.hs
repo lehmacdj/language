@@ -44,3 +44,8 @@ fromJustEx :: HasCallStack => Maybe a -> a
 fromJustEx = \case
   Just x -> x
   Nothing -> error "expected Just but was Nothing"
+
+fromEitherVia :: Member (Error e') r => (e -> e') -> Either e a -> Sem r a
+fromEitherVia f = \case
+  Left e -> throw $ f e
+  Right a -> pure a

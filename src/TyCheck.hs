@@ -7,6 +7,7 @@ import Evaluator
 import MyPrelude
 import Numeric.Natural
 import Polysemy.Error
+import Prettyprinter
 
 data UniverseTypeCheckingContext
   = -- | domain of a pi type + the pi type
@@ -43,6 +44,10 @@ data TypeError
   | OtherTypeError Term'
   | MultipleTypeErrors (NonEmpty TypeError)
   deriving (Show, Eq, Generic)
+
+instance Pretty TypeError where
+  -- TODO: improve instance
+  pretty = viaShow
 
 -- | Combine multiple type errors preserving the order of the type errors
 instance Semigroup TypeError where
