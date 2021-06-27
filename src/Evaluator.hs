@@ -32,10 +32,15 @@ nf (App f a) = do
     Var x -> pure $ App (Var x) a
     _ -> throw . InvalidApplicationOf $ tshow <$> f'
 
+-- | Reduce to weak head normal form so that the basic shape of the data
+-- is known. This only performs two kinds of evaluation:
+-- * 'App' is reduced
+-- * 'TyAnn' is removed
 whnf ::
   (Member (Error RuntimeError) r, Show a) =>
   Term Text a ->
   Sem r (Term Text a)
+whnf (TyAnn x _) = pure x
 whnf (App f a) = do
   f' <- whnf f
   case f' of

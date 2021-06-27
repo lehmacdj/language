@@ -21,8 +21,12 @@ test_nf =
       pib "z" (Universe 0) (lam "x" (Var "x") `App` Var "y") `hasNf` pib "z" (Universe 0) (Var "y"),
       lam "z" (lam "x" (Var "x") `App` Var "y") `hasNf` lam "z" (Var "y"),
       Magic `hasNf` Magic,
+      (Magic `TyAnn` Universe 0) `hasNf` Magic,
       testProperty "Universe n is in normal form" $ \n ->
-        runE (nf (Universe n)) === Right (Universe n :: Term')
+        runE (nf (Universe n)) === Right (Universe n :: Term'),
+      -- this example is one of the smallest well typed evaluations that can
+      -- be performed
+      let u0 = Universe 0 in ((lam "x" (Var "x") `TyAnn` (u0 `arrow` u0)) `App` (Magic `TyAnn` u0)) `hasNf` Magic
     ]
   where
     hasNf :: Term' -> Term' -> TestTree
@@ -40,6 +44,7 @@ test_whnf =
       pib "z" (Universe 0) (lam "x" (Var "x") `App` Var "y") `hasWhnf` pib "z" (Universe 0) (lam "x" (Var "x") `App` Var "y"),
       lam "z" (lam "x" (Var "x") `App` Var "y") `hasWhnf` lam "z" (lam "x" (Var "x") `App` Var "y"),
       Magic `hasWhnf` Magic,
+      (Magic `TyAnn` Universe 0) `hasWhnf` Magic,
       testProperty "Universe n is in weak-head normal form" $ \n ->
         runE (whnf (Universe n)) === Right (Universe n :: Term')
     ]
