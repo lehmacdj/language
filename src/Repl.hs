@@ -68,9 +68,9 @@ interpretCommand = \case
     t' <- mapError RE $ nf t
     sayShow t'
   Evaluate t -> do
-    t' <- mapError TE $ inferType t
-    t'' <- mapError RE $ nf t'
-    sayShow t''
+    ty <- mapError TE $ inferType t
+    t' <- mapError RE $ nf t
+    say $ tshow t' <> " : " <> tshow ty
 
 handleErrors :: Member (Embed IO) r => Sem (Error InterpreterError : r) () -> Sem r ()
 handleErrors = either (sayErrShow . pretty) pure <=< runError
