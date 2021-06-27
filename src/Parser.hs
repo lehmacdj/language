@@ -45,7 +45,7 @@ symbol :: Text -> Parser Text
 symbol = lexeme . string
 
 keyword :: Text -> Parser Text
-keyword t = symbol t <* notFollowedBy identStartChar
+keyword t = lexeme (string t <* notFollowedBy identStartChar)
 
 natural :: Parser Natural
 natural = lexeme L.decimal
@@ -71,6 +71,12 @@ bareIdentifier = do
   notFollowedBy pMagic
   notFollowedBy pUniverse
   lexeme $ pack <$> ((:) <$> identStartChar <*> many identChar)
+
+preUniverse :: Parser Term'
+preUniverse = "U" *> (Universe <$> L.decimal) <* notFollowedBy identStartChar
+
+pUniverse :: Parser Term'
+pUniverse = lexeme preUniverse
 
 stringLiteral :: Parser Text
 stringLiteral = lexeme $ char '"' >> pack <$> manyTill L.charLiteral (char '"')
@@ -105,9 +111,6 @@ pLam = (lamStart $> lam) <*> (identifier <* symbol ".") <*> pTerm
 
 pVar :: Parser Term'
 pVar = Var <$> identifier
-
-pUniverse :: Parser Term'
-pUniverse = "U" *> (Universe <$> natural) <* notFollowedBy identStartChar
 
 pMagic :: Parser Term'
 pMagic = keyword "magic" $> Magic
