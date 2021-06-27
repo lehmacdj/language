@@ -95,8 +95,8 @@ pTerm =
       -- type annotations are non-associative because there isn't a cannonical
       -- way that they should associate, we could always make them associate
       -- one way or the other later
-      [InfixN (TyAnn <$ symbol ":")],
-      [InfixR (arrow <$ symbol "->")]
+      [InfixR (arrow <$ symbol "->")],
+      [InfixN (TyAnn <$ symbol ":")]
     ]
 
 pPi :: Parser Term'
