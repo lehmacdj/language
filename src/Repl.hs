@@ -77,7 +77,7 @@ handleErrors = either (sayErrShow . pretty) pure <=< runError
 
 repl :: Members [Embed IO, Readline] r => Sem r ()
 repl = do
-  commandStr <- getInputLine "λ>"
+  commandStr <- getInputLine "λ> "
   case commandStr of
     Nothing -> quit
     Just commandStr' -> do
