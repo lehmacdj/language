@@ -21,8 +21,10 @@ dependencies:
 - bound
 - bytestring
 - classy-prelude
+- comonad
 - containers
 - deriving-compat
+- generic-lens
 - lens
 - megaparsec
 - mtl
@@ -34,6 +36,7 @@ dependencies:
 - prettyprinter-ansi-terminal
 - text
 - unliftio
+- validation-selective
 
 default-extensions:
 - DataKinds
@@ -41,10 +44,12 @@ default-extensions:
 - DeriveGeneric
 - DeriveTraversable
 - DeriveFoldable
+- DuplicateRecordFields
 - FlexibleContexts
 - GADTs
 - LambdaCase
 - NoImplicitPrelude
+- OverloadedLabels
 - OverloadedStrings
 - PolyKinds
 - RankNTypes

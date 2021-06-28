@@ -17,6 +17,8 @@ data UniverseTypeCheckingContext
   | -- | while checking that a term has a specific type e.g. via a TyAnn
     -- + tye term and type of the assertion
     TypeAssertion Term' Term'
+  | -- | while checking a label in the given record
+    RecordTyWithLabel Text Term'
   deriving (Show, Eq, Generic)
 
 data TypeError
@@ -35,6 +37,7 @@ data TypeError
     ApplicationToTermWithoutFunctionType Term' Term'
   | UnannotatedLambdaExpression Term'
   | UnannotatedMagic
+  | UninferredTerm
   | -- | Type mismatch while typechecking first term. Expected second term
     -- doesn't match inferred type third term
     TypeMismatch Term' Term' Term'
@@ -43,6 +46,12 @@ data TypeError
     LambdaWithNonPiType Term' Term'
   | OtherTypeError Term'
   | MultipleTypeErrors (NonEmpty TypeError)
+  | -- | First term appears in a projection and is expected to have a record
+    -- type but has the second term as its type.
+    ProjectionOfNonRecordTy Term' Term'
+  | -- | First term expected to have a type (second term) containing the label
+    -- (third arg).
+    ProjectionOfMissingRecordLabelTy Term' Term' Text
   deriving (Show, Eq, Generic)
 
 instance Pretty TypeError where
@@ -83,6 +92,7 @@ inferType ::
 inferType = \case
   Universe n -> pure $ Universe (succ n)
   Magic -> throw UnannotatedMagic
+  Inferred -> throw UninferredTerm
   Var v -> throw $ TypeVariableNotInScope v
   TyAnn t ty -> typeCheck t ty >> pure ty
   Pi d s -> do
@@ -103,7 +113,15 @@ inferType = \case
     -- function space as Universe i, by instead typing the domain and codomain
     -- each as Universe i
     pure $ Universe (max domainUniverseLevel' codomainUniverseLevel')
-  Lam s -> throw $ UnannotatedLambdaExpression (Lam s)
+  -- TODO: take advantage of codomain ty
+  -- note: to do this it will probably require switching to a more traditional
+  -- type checking algorithm where we have a context because otherwise it
+  -- doesn't seem possible to reconstruct the most general type that is roughly
+  -- @pib x (nf ty) (inferType s)@. However, this will require unwrapping
+  -- the scopes all the way down, and then reconstructing them. + it will be
+  -- necessary to generate somewhat meaningful names for them. All in all,
+  -- this seems kind of hard.
+  Lam ty s -> throw $ UnannotatedLambdaExpression (Lam ty s)
   App a b -> do
     aTy <- inferType a
     (domainTy, rangeTyScope) <- case aTy of
@@ -111,6 +129,18 @@ inferType = \case
       _ -> throw $ ApplicationToTermWithoutFunctionType (App a b) aTy
     typeCheck b domainTy
     pure $ instantiate1 (Magic `TyAnn` b) rangeTyScope
+  RecordTy m -> do
+    let assertHasUniverseType' (l, t) =
+          assertHasUniverseType (RecordTyWithLabel l (RecordTy m)) t
+    levels <- sequenceErrorsParallelly (assertHasUniverseType' <$> mapToList m)
+    let level = maximum (0 `ncons` levels)
+    pure $ Universe level
+  Record m -> pure $ RecordTy (view #entryType <$> m)
+  Project t l -> do
+    tTy <- inferType t
+    case tTy of
+      RecordTy m -> note (ProjectionOfMissingRecordLabelTy t tTy l) $ lookup l m
+      _ -> throw $ ProjectionOfNonRecordTy t tTy
 
 -- | Does the term (first arg) have the specified type (second arg).
 typeCheck ::
@@ -122,12 +152,12 @@ typeCheck t ty = case t of
   -- Magic is allowed to have any syntactically valid type, even if it isn't
   -- a valid type for other purposes
   Magic -> pure ()
-  Lam s -> do
+  Lam cdty s -> do
     _ <- assertHasUniverseType (TypeAssertion t ty) ty
     tyTy <- subsumeRuntimeError $ nf ty
     case tyTy of
       Pi d c -> typeCheck (instantiate1 (Magic `TyAnn` d) s) (instantiate1 (Magic `TyAnn` d) c)
-      _ -> throw $ LambdaWithNonPiType (Lam s) tyTy
+      _ -> throw $ LambdaWithNonPiType (Lam cdty s) tyTy
   _ -> do
     let inferredTermTyNf = do
           tTy <- inferType t
