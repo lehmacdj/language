@@ -53,6 +53,7 @@ library
       PolyKinds
       RankNTypes
       ScopedTypeVariables
+      TupleSections
       TypeApplications
       TypeFamilies
       TypeOperators
@@ -102,6 +103,7 @@ executable language-exe
       PolyKinds
       RankNTypes
       ScopedTypeVariables
+      TupleSections
       TypeApplications
       TypeFamilies
       TypeOperators
@@ -158,6 +160,7 @@ test-suite language-test
       PolyKinds
       RankNTypes
       ScopedTypeVariables
+      TupleSections
       TypeApplications
       TypeFamilies
       TypeOperators

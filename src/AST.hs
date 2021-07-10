@@ -7,8 +7,6 @@ import Bound.Name
 import Control.Lens
 import qualified Control.Monad
 import Data.Deriving
-import qualified Data.Map as Map
-import qualified Data.Set as Set
 import MyPrelude
 import Numeric.Natural
 
@@ -141,6 +139,9 @@ pib n d e = Pi d (abstract1BoundName n e)
 arrow :: Eq n => Term n n -> Term n n -> Term n n
 arrow d e = Pi d (fmap fromJustEx (abstract1Name Nothing (fmap Just e)))
 
+-- TODO: switch these smart functions to return either with a reason instead
+-- This will be important for getting better error messages from the parser.
+
 hasNoDuplicateLabels :: Ord n => [(n, a)] -> Bool
 hasNoDuplicateLabels bindings =
   length (toSetOf (folded . _1) bindings) == length bindings
@@ -154,6 +155,9 @@ makeSmartRecordMaker f bindings
 -- | Create a record; bindings must be non duplicate. Otherwise returns Nothing
 record :: Ord n => [(n, Term n n)] -> Maybe (Term n n)
 record = makeSmartRecordMaker record'
+
+typedRecord :: Ord n => [(n, (Term n n, Term n n))] -> Maybe (Term n n)
+typedRecord = makeSmartRecordMaker typedRecord'
 
 -- | Create a max record type; bindings must be non duplicate. Otherwise returns Nothing
 recordTy :: Ord n => [(n, Term n n)] -> Maybe (Term n n)
@@ -172,13 +176,18 @@ data PreRecordEntry n e = PreRecordEntry
 -- test data or in situations where we statically know that the record
 -- values are well formed.
 record' :: Ord n => [(n, Term n n)] -> Term n n
-record' bindings =
+record' = typedRecord' . over (mapped . _2) (,Inferred)
+
+-- | Like record but for each label specify an explicit type. The explicit type
+-- is the second term in the pairs bound to the label.
+typedRecord' :: Ord n => [(n, (Term n n, Term n n))] -> Term n n
+typedRecord' bindings =
   Record
     . fmap toRecordEntry
     . over (mapped . #entry) (abstract boundVarFor)
     $ bindings'
   where
-    mkPreRecordEntry (l, t) i = (l, PreRecordEntry i Inferred t)
+    mkPreRecordEntry (l, (t, ty)) i = (l, PreRecordEntry i ty t)
     toRecordEntry (PreRecordEntry i ty t) = RecordEntry i ty t
     bindings' = mapFromList $ zipWith mkPreRecordEntry bindings [0 ..]
     boundVarFor x = Name (Just x) . view #index <$> lookup x bindings'
