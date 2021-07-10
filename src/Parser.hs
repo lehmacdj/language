@@ -4,7 +4,6 @@ module Parser where
 
 import AST
 import Control.Monad.Combinators.Expr
-import Data.Void
 import MyPrelude
 import Numeric.Natural
 import Prettyprinter (Pretty (..))
@@ -12,9 +11,22 @@ import Text.Megaparsec hiding (ParseError, many, sepBy1)
 import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
 
-type Parser = Parsec Void Text
+data CustomParseError
+  = DuplicateRecordLabels Int
+  | DuplicateRecordTyLabels Int
+  deriving (Show, Eq, Ord)
 
-newtype ParseError = ParseError {unParseError :: ParseErrorBundle Text Void}
+instance ShowErrorComponent CustomParseError where
+  showErrorComponent = \case
+    DuplicateRecordLabels _ -> "Duplicate record labels in record."
+    DuplicateRecordTyLabels _ -> "Duplicate record labels in record signature."
+  errorComponentLen = \case
+    DuplicateRecordLabels n -> n
+    DuplicateRecordTyLabels n -> n
+
+type Parser = Parsec CustomParseError Text
+
+newtype ParseError = ParseError {unParseError :: ParseErrorBundle Text CustomParseError}
   deriving (Show, Eq, Generic)
 
 instance Pretty ParseError where
@@ -52,6 +64,12 @@ natural = lexeme L.decimal
 
 parens :: Parser a -> Parser a
 parens = between (symbol "(") (symbol ")")
+
+braces :: Parser a -> Parser a
+braces = between (symbol "{") (symbol "}")
+
+squares :: Parser a -> Parser a
+squares = between (symbol "[") (symbol "]")
 
 -- | extraIdentChars :: [Char]
 extraIdentChars :: String
@@ -115,6 +133,43 @@ pVar = Var <$> identifier
 pMagic :: Parser Term'
 pMagic = keyword "magic" $> Magic
 
+-- | A record innard is either a type ascription or an equation.
+pRecordInnard :: Parser (Text, (Term', Term'))
+pRecordInnard = do
+  ident <- identifier
+  let inferred = symbol "=" *> ((,Inferred) <$> pTerm)
+      explicit =
+        flip (,)
+          <$> (symbol ":" *> pTerm <* symbol ",")
+          <*> (symbol ident *> symbol "=" *> pTerm)
+  (ident,) <$> (explicit <|> inferred)
+
+pRecordTyInnard :: Parser (Text, Term')
+pRecordTyInnard = (,) <$> (identifier <* symbol ":") <*> pTerm
+
+customFailureWithOffset :: Ord e => Int -> e -> Parsec e Text a
+customFailureWithOffset o = parseError . FancyError o . singleton . ErrorCustom
+
+pRecord :: Parser Term'
+pRecord = do
+  void $ keyword "record"
+  o <- getOffset
+  recordContents <- braces (pRecordInnard `sepEndBy` symbol ",")
+  o' <- getOffset
+  case typedRecord recordContents of
+    Nothing -> customFailureWithOffset o $ DuplicateRecordLabels (o' - o)
+    Just r -> pure r
+
+pRecordTy :: Parser Term'
+pRecordTy = do
+  void $ keyword "sig"
+  o <- getOffset
+  recordTyContents <- braces (pRecordTyInnard `sepEndBy` symbol ",")
+  o' <- getOffset
+  case recordTy recordTyContents of
+    Nothing -> customFailureWithOffset o $ DuplicateRecordTyLabels (o' - o)
+    Just rTy -> pure rTy
+
 pPrimitiveTerm :: Parser Term'
 pPrimitiveTerm =
   parens pTerm
@@ -122,4 +177,6 @@ pPrimitiveTerm =
     <|> pMagic
     <|> pPi
     <|> pLam
+    <|> pRecord
+    <|> pRecordTy
     <|> pVar

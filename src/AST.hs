@@ -149,8 +149,8 @@ hasNoDuplicateLabels bindings =
 makeSmartRecordMaker ::
   Ord n => ([(n, a)] -> Term n n) -> [(n, a)] -> Maybe (Term n n)
 makeSmartRecordMaker f bindings
-  | hasNoDuplicateLabels bindings = Nothing
-  | otherwise = Just $ f bindings
+  | hasNoDuplicateLabels bindings = Just $ f bindings
+  | otherwise = Nothing
 
 -- | Create a record; bindings must be non duplicate. Otherwise returns Nothing
 record :: Ord n => [(n, Term n n)] -> Maybe (Term n n)

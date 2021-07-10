@@ -26,6 +26,10 @@ test_pTerm =
       "-" `failsBecause` "variables can't start with -",
       "'" `failsBecause` "variables can't start with '",
       "_" `failsBecause` "variables can't start with _",
+      "lambda" `failsBecause` "variable can't be 'lambda'",
+      "forall" `failsBecause` "variable can't be 'forall'",
+      "record" `failsBecause` "variable can't be 'record'",
+      "sig" `failsBecause` "variable can't be 'sig'",
       "\"@*$&#.\"" `parsesTo` Var "@*$&#.",
       "forall x : y. z" `parsesTo` pib "x" (Var "y") (Var "z"),
       "forall x : y. x" `parsesTo` pib "x" (Var "y") (Var "x"),
@@ -77,7 +81,18 @@ test_pTerm =
       "forall x1 : x2. x3 : y" `parsesTo` pib "x1" (Var "x2") (Var "x3" `TyAnn` Var "y"),
       "lambda x1 . x2 : y" `parsesTo` lam "x1" (Var "x2" `TyAnn` Var "y"),
       "x : forall y1 : y2. y3" `parsesTo` (Var "x" `TyAnn` pib "y1" (Var "y2") (Var "y3")),
-      "x : lambda y1 . y2" `parsesTo` (Var "x" `TyAnn` lam "y1" (Var "y2"))
+      "x : lambda y1 . y2" `parsesTo` (Var "x" `TyAnn` lam "y1" (Var "y2")),
+      "record {x = y, y = z}" `parsesTo` record' ["x" *= Var "y", "y" *= Var "z"],
+      "record{x = y}" `parsesTo` record' ["x" *= Var "y"],
+      "record{x = x,x=x}" `failsBecause` "Duplicate record label",
+      "record {x = x,}" `parsesTo` record' ["x" *= Var "x"],
+      "record {x : U0, x = magic}" `parsesTo` typedRecord' ["x" *= (Magic, Universe 0)],
+      "record {x : U0, x = magic}" `parsesTo` typedRecord' ["x" *= (Magic, Universe 0)],
+      "record {x = magic : U0}" `parsesTo` record' ["x" *= Magic `TyAnn` Universe 0],
+      "sig {x : U0}" `parsesTo` recordTy' ["x" *= Universe 0],
+      "sig{x : U0}" `parsesTo` recordTy' ["x" *= Universe 0],
+      "sig {x : sig {x : U0}}" `parsesTo` recordTy' ["x" *= recordTy' ["x" *= Universe 0]],
+      "id sig {x : U0}" `parsesTo` (Var "id" `App` recordTy' ["x" *= Universe 0])
     ]
   where
     parsesTo x y =

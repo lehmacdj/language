@@ -33,7 +33,8 @@ test_inferType =
       let t = Universe 0 `App` Universe 0
        in t `throwsError` ApplicationToTermWithoutFunctionType t (Universe 1),
       recordTy' ["x" *= Universe 0, "y" *= Universe 1] `infersType` Universe 2,
-      typedRecord' ["x" *= (Universe 0, Universe 1)] `infersType` recordTy' ["x" *= Universe 1]
+      typedRecord' ["x" *= (Universe 0, Universe 1)] `infersType` recordTy' ["x" *= Universe 1],
+      typedRecord' ["x" *= (Magic, Universe 1)] `infersType` recordTy' ["x" *= Universe 1]
     ]
   where
     infersType t ty = testCase ("inferType $ " ++ show t) $ runE (inferType t) @?= Right ty

@@ -23,6 +23,8 @@ newtype Verbatim = Verbatim String
 instance Show Verbatim where
   show (Verbatim s) = s
 
+infixr 7 *=
+
 (*=) :: a -> b -> (a, b)
 (*=) = (,)
 
