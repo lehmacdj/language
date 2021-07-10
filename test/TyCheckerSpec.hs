@@ -26,9 +26,12 @@ test_inferType =
       let t = pib "x" (Magic `TyAnn` Magic) (Magic `TyAnn` Magic)
        in t `throwsError` MultipleTypeErrors (NonUniverseType (PiDomain t) Magic :| [NonUniverseType (PiCodomain t) Magic]),
       let t = lam "x" (Var "x") in t `throwsError` UnannotatedLambdaExpression t,
-      let ty = pib "x'" (Universe 0) (Universe 0) in (lam "x" (Var "x") `TyAnn` ty) `infersType` ty,
-      ((Magic `TyAnn` pib "x" (Universe 0) (Universe 0)) `App` (Magic `TyAnn` Universe 0)) `infersType` Universe 0,
-      let t = Universe 0 `App` Universe 0 in t `throwsError` ApplicationToTermWithoutFunctionType t (Universe 1)
+      let ty = pib "x'" (Universe 0) (Universe 0)
+       in (lam "x" (Var "x") `TyAnn` ty) `infersType` ty,
+      ((Magic `TyAnn` pib "x" (Universe 0) (Universe 0)) `App` (Magic `TyAnn` Universe 0))
+        `infersType` Universe 0,
+      let t = Universe 0 `App` Universe 0
+       in t `throwsError` ApplicationToTermWithoutFunctionType t (Universe 1)
     ]
   where
     infersType t ty = testCase ("inferType $ " ++ show t) $ runE (inferType t) @?= Right ty
