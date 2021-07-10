@@ -28,11 +28,17 @@ source-repository head
 library
   exposed-modules:
       AST
+      ASTSpec
       Evaluator
+      EvaluatorSpec
       MyPrelude
       Parser
+      ParserSpec
       Repl
+      Spec
+      TestPrelude
       TyCheck
+      TyCheckerSpec
   other-modules:
       Paths_language
   hs-source-dirs:
@@ -76,6 +82,12 @@ library
     , polysemy-readline
     , prettyprinter
     , prettyprinter-ansi-terminal
+    , quickcheck-instances
+    , tasty
+    , tasty-discover
+    , tasty-golden
+    , tasty-hunit
+    , tasty-quickcheck
     , text
     , unliftio
     , validation-selective
@@ -127,6 +139,12 @@ executable language-exe
     , polysemy-readline
     , prettyprinter
     , prettyprinter-ansi-terminal
+    , quickcheck-instances
+    , tasty
+    , tasty-discover
+    , tasty-golden
+    , tasty-hunit
+    , tasty-quickcheck
     , text
     , unliftio
     , validation-selective
@@ -134,13 +152,8 @@ executable language-exe
 
 test-suite language-test
   type: exitcode-stdio-1.0
-  main-is: Spec.hs
+  main-is: Main.hs
   other-modules:
-      ASTSpec
-      EvaluatorSpec
-      ParserSpec
-      TestPrelude
-      TyCheckerSpec
       Paths_language
   hs-source-dirs:
       test

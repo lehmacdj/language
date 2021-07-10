@@ -37,6 +37,14 @@ dependencies:
 - text
 - unliftio
 - validation-selective
+# test dependencies, trying to keep these separate even though they are required
+# by the main lib because our tests are in tree.
+- tasty
+- tasty-hunit
+- tasty-discover
+- tasty-golden
+- tasty-quickcheck
+- quickcheck-instances
 
 default-extensions:
 - DataKinds
@@ -82,7 +90,7 @@ executables:
 
 tests:
   language-test:
-    main:                Spec.hs
+    main:                Main.hs
     source-dirs:         test
     ghc-options:
     - -threaded
@@ -90,9 +98,3 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - language
-    - tasty
-    - tasty-hunit
-    - tasty-discover
-    - tasty-golden
-    - tasty-quickcheck
-    - quickcheck-instances
