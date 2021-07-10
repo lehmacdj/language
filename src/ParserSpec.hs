@@ -36,6 +36,7 @@ test_pTerm =
       "wforall x : y. z" `failsBecause` "ill formed forall",
       "forallx : y. z" `failsBecause` "space required between forall and variable",
       "lambda x. y" `parsesTo` lam "x" (Var "y"),
+      "lambda x : y. z" `parsesTo` typedLam "x" (Var "y") (Var "z"),
       "xlambda y. z" `failsBecause` "ill formed lambda",
       "lambdax. y" `failsBecause` "space required between lambda and variable",
       "x -> y" `parsesTo` (Var "x" `arrow` Var "y"),

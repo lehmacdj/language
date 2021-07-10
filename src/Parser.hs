@@ -123,7 +123,13 @@ pPi = (piStart $> pib) <*> (identifier <* symbol ":") <*> (pTerm <* symbol ".") 
     piStart = keyword "forall"
 
 pLam :: Parser Term'
-pLam = (lamStart $> lam) <*> (identifier <* symbol ".") <*> pTerm
+pLam = do
+  void lamStart
+  ident <- identifier
+  let explicit = (,) <$> (symbol ":" *> pTerm <* symbol ".") <*> pTerm
+      implicit = symbol "." *> pTerm
+  either (uncurry (typedLam ident)) (lam ident)
+    <$> (Left <$> explicit <|> Right <$> implicit)
   where
     lamStart = keyword "lambda"
 

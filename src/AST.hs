@@ -128,6 +128,9 @@ type Term' = Term Text Text
 lam :: Eq n => n -> Term n n -> Term n n
 lam n e = Lam Inferred (abstract1BoundName n e)
 
+typedLam :: Eq n => n -> Term n n -> Term n n -> Term n n
+typedLam n ty e = Lam ty (abstract1BoundName n e)
+
 -- | pnemonic: pi-binder; name is not just pi to avoid conflict with pi :: Float
 pib :: Eq n => n -> Term n n -> Term n n -> Term n n
 pib n d e = Pi d (abstract1BoundName n e)
