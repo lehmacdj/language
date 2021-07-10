@@ -78,7 +78,7 @@ library:
   source-dirs: src
 
 executables:
-  language-exe:
+  langi:
     main:                Main.hs
     source-dirs:         app
     ghc-options:
