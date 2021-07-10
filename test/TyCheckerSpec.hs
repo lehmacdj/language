@@ -10,6 +10,9 @@ import TyCheck
 runE :: Sem '[Error e] a -> Either e a
 runE = run . runError
 
+(.=) :: a -> b -> (a, b)
+a .= b = (a, b)
+
 test_inferType :: TestTree
 test_inferType =
   testGroup
@@ -31,7 +34,9 @@ test_inferType =
       ((Magic `TyAnn` pib "x" (Universe 0) (Universe 0)) `App` (Magic `TyAnn` Universe 0))
         `infersType` Universe 0,
       let t = Universe 0 `App` Universe 0
-       in t `throwsError` ApplicationToTermWithoutFunctionType t (Universe 1)
+       in t `throwsError` ApplicationToTermWithoutFunctionType t (Universe 1),
+      recordTy' ["x" .= Universe 0, "y" .= Universe 1] `infersType` Universe 2,
+      typedRecord' ["x" .= (Universe 0, Universe 1)] `infersType` recordTy' ["x" .= Universe 1]
     ]
   where
     infersType t ty = testCase ("inferType $ " ++ show t) $ runE (inferType t) @?= Right ty
