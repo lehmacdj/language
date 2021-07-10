@@ -23,6 +23,9 @@ newtype Verbatim = Verbatim String
 instance Show Verbatim where
   show (Verbatim s) = s
 
+(*=) :: a -> b -> (a, b)
+(*=) = (,)
+
 testParserParses ::
   (Eq a, Eq e, Show e, ShowErrorComponent e, Show a) =>
   Parsec e Text a ->

@@ -9,10 +9,6 @@ import TestPrelude
 runE :: Sem '[Error e] a -> Either e a
 runE = run . runError
 
--- | Syntactic convenience for defining records
-(.=) :: a -> b -> (a, b)
-x .= y = (x, y)
-
 test_nf :: TestTree
 test_nf =
   testGroup
@@ -32,10 +28,10 @@ test_nf =
       -- be performed
       let u0 = Universe 0 in ((lam "x" (Var "x") `TyAnn` (u0 `arrow` u0)) `App` (Magic `TyAnn` u0)) `hasNf` Magic,
       let r :: Term'
-          r = record' ["x" .= Var "y"]
+          r = record' ["x" *= Var "y"]
        in (r `Project` "x" :: Term') `hasNf` Var "y",
       let r :: Term'
-          r = record' ["x" .= Var "y", "y" .= Var "z"]
+          r = record' ["x" *= Var "y", "y" *= Var "z"]
        in (r `Project` "x" :: Term') `hasNf` Var "z"
       -- TODO: test that records may use recursion
     ]
