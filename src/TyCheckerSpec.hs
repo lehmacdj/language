@@ -22,9 +22,6 @@ test_inferType =
       -- inconsistent universes
       pib "x" (Universe 0) (Universe 1) `infersType` Universe 2,
       pib "x" (Universe 1) (Universe 0) `infersType` Universe 2,
-      -- parallel error handling
-      let t = pib "x" (Magic `TyAnn` Magic) (Magic `TyAnn` Magic)
-       in t `throwsError` MultipleTypeErrors (NonUniverseType (PiDomain t) Magic :| [NonUniverseType (PiCodomain t) Magic]),
       let t = lam "x" (Var "x") in t `throwsError` UnannotatedLambdaExpression t,
       let ty = pib "x'" (Universe 0) (Universe 0)
        in (lam "x" (Var "x") `TyAnn` ty) `infersType` ty,

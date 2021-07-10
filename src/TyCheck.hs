@@ -96,23 +96,18 @@ inferType = \case
   Var v -> throw $ TypeVariableNotInScope v
   TyAnn t ty -> typeCheck t ty >> pure ty
   Pi d s -> do
-    let domainUniverseLevel = do
-          dTy <- inferType d
-          case dTy of
-            Universe n -> pure n
-            _ -> throw $ NonUniverseType (PiDomain (Pi d s)) dTy
-        codomainUniverseLevel = do
-          d' <- subsumeRuntimeError $ nf d
-          sTy <- inferType (instantiate1 (Magic `TyAnn` d') s)
-          case sTy of
-            Universe n -> pure n
-            _ -> throw $ NonUniverseType (PiCodomain (Pi d s)) sTy
-    (domainUniverseLevel', codomainUniverseLevel') <-
-      errorsParallelly domainUniverseLevel codomainUniverseLevel
+    -- unfortunately we can't type check the domain and codomain in parallel
+    -- because type checking the codomain requires reducing the domain to
+    -- normal form first. Note: we might be able to solve this by not reducing
+    -- to normal form first, but this might have performance implications.
+    domainUniverseLevel <- assertHasUniverseType (PiDomain (Pi d s)) d
+    d' <- subsumeRuntimeError $ nf d
+    codomainUniverseLevel <-
+      assertHasUniverseType (PiCodomain (Pi d s)) (instantiate1 (Magic `TyAnn` d') s)
     -- if both the domain and codomain are <= Universe i then we can type the
     -- function space as Universe i, by instead typing the domain and codomain
     -- each as Universe i
-    pure $ Universe (max domainUniverseLevel' codomainUniverseLevel')
+    pure $ Universe (max domainUniverseLevel codomainUniverseLevel)
   -- TODO: take advantage of codomain ty
   -- note: to do this it will probably require switching to a more traditional
   -- type checking algorithm where we have a context because otherwise it
