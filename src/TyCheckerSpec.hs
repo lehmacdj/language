@@ -1,7 +1,6 @@
 module TyCheckerSpec where
 
 import AST
-import Data.List.NonEmpty (NonEmpty (..))
 import Polysemy.Error
 import Test.QuickCheck.Instances.Natural ()
 import TestPrelude
@@ -15,10 +14,10 @@ test_inferType =
   testGroup
     "inferType"
     [ testProperty "Universe n : Universe (n + 1)" $
-        \n -> runE (inferType (Universe n)) === Right (Universe (n + 1)),
+        \n -> runE (inferType (Universe n :: Term')) === Right (Universe (n + 1)),
       Magic `throwsError` UnannotatedMagic,
       (Magic `TyAnn` Magic) `infersType` Magic,
-      Var "x" `throwsError` TypeVariableNotInScope "x",
+      Var "x" `throwsError` TypeVariableNotInScope "\"x\"",
       -- inconsistent universes
       pib "x" (Universe 0) (Universe 1) `infersType` Universe 2,
       pib "x" (Universe 1) (Universe 0) `infersType` Universe 2,
@@ -34,7 +33,9 @@ test_inferType =
       typedRecord' ["x" *= (Magic, Universe 1)] `infersType` recordTy' ["x" *= Universe 1]
     ]
   where
+    infersType :: Term' -> Term' -> TestTree
     infersType t ty = testCase ("inferType $ " ++ show t) $ runE (inferType t) @?= Right ty
+    throwsError :: Term' -> TypeError -> TestTree
     throwsError t err = testCase ("inferType $ " ++ show t) $ runE (inferType t) @?= Left err
 
 test_typeCheck :: TestTree
@@ -51,10 +52,12 @@ test_typeCheck =
       Magic `hasType` (Universe 0 `TyAnn` Universe 0),
       lam "x" (Var "x") `hasType` pib "x" (Universe 0) (Universe 0),
       let t = lam "x" (Var "x") in throwsError t (Magic `TyAnn` Universe 0) $ LambdaWithNonPiType t Magic,
-      throwsError (Var "x") (Universe 0) $ TypeVariableNotInScope "x",
+      throwsError (Var "x") (Universe 0) $ TypeVariableNotInScope "\"x\"",
       (Magic `TyAnn` Magic) `hasType` (Magic `TyAnn` Universe 0),
       let t = (Magic `TyAnn` Universe 1) in throwsError t (Universe 0) $ TypeMismatch t (Universe 0) (Universe 1)
     ]
   where
+    hasType :: Term' -> Term' -> TestTree
     hasType t ty = testCase (show t ++ " : " ++ show ty) $ runE (typeCheck t ty) @?= Right ()
+    throwsError :: Term' -> Term' -> TypeError -> TestTree
     throwsError t ty err = testCase (show t ++ " : " ++ show ty) $ runE (typeCheck t ty) @?= Left err
