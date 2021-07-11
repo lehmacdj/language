@@ -1,4 +1,12 @@
-module TyCheck where
+module TyCheck
+  ( inferType,
+    typeCheck,
+
+    -- * Error Types
+    TypeError (..),
+    UniverseTypeCheckingContext (..),
+  )
+where
 
 import AST
 import Bound
