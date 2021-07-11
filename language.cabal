@@ -63,6 +63,7 @@ library
       TypeApplications
       TypeFamilies
       TypeOperators
+      ViewPatterns
   ghc-options: -Wall -Wincomplete-uni-patterns -fplugin=Polysemy.Plugin -flate-specialise -fspecialise-aggressively
   build-depends:
       base >=4.7 && <5
@@ -119,6 +120,7 @@ executable langi
       TypeApplications
       TypeFamilies
       TypeOperators
+      ViewPatterns
   ghc-options: -Wall -Wincomplete-uni-patterns -fplugin=Polysemy.Plugin -flate-specialise -fspecialise-aggressively -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
@@ -177,6 +179,7 @@ test-suite language-test
       TypeApplications
       TypeFamilies
       TypeOperators
+      ViewPatterns
   ghc-options: -Wall -Wincomplete-uni-patterns -fplugin=Polysemy.Plugin -flate-specialise -fspecialise-aggressively -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5

@@ -2,6 +2,7 @@ module TyCheck where
 
 import AST
 import Bound
+import Control.Comonad
 import Data.List.NonEmpty (NonEmpty (..))
 import Evaluator
 import MyPrelude
@@ -10,7 +11,9 @@ import Polysemy.Error
 import Prettyprinter
 
 data UniverseTypeCheckingContext
-  = -- | domain of a pi type + the pi type
+  = -- | domain of a lambda binder + the lambda expression
+    LambdaDomain Term'
+  | -- | domain of a pi type + the pi type
     PiDomain Term'
   | -- codomain of a pi type + the pi type
     PiCodomain Term'
@@ -35,7 +38,6 @@ data TypeError
   | -- | First term appears in an application and is expected to have a pi type
     -- but is inferred as having second term
     ApplicationToTermWithoutFunctionType Term' Term'
-  | UnannotatedLambdaExpression Term'
   | UnannotatedMagic
   | UninferredTerm
   | -- | Type mismatch while typechecking first term. Expected second term
@@ -82,6 +84,26 @@ assertHasUniverseType context t = do
     Universe n -> pure n
     _ -> throw . NonUniverseType context $ tshow <$> tTy
 
+type Ctx r a = a -> Sem r (Term Text a)
+
+emptyCtx :: (Member (Error TypeError) r, Eq a, Show a) => Ctx r a
+emptyCtx v = throw . TypeVariableNotInScope $ tshow v
+
+extendCtxUnit ::
+  (Comonad w, Member (Error TypeError) r) => Term Text a -> Ctx r a -> Ctx r (Var (w ()) a)
+extendCtxUnit ty cxt = \case
+  B (extract -> ()) -> pure (F <$> ty)
+  F a -> (F <$>) <$> cxt a
+
+extendCtxInt ::
+  (Comonad w, HasCallStack, Member (Error TypeError) r) =>
+  (Int -> Term Text a) ->
+  Ctx r a ->
+  Ctx r (Var (w Int) a)
+extendCtxInt f ctx = \case
+  B n -> pure $ F <$> f (extract n)
+  F a -> (F <$>) <$> ctx a
+
 -- | Given a term without a type compute its type + ensure that it is well typed
 -- with that inferred type. Type inference may fail with an ambiguous type
 -- error.
@@ -89,12 +111,20 @@ inferType ::
   (Show a, Eq a, Member (Error TypeError) r) =>
   Term Text a ->
   Sem r (Term Text a)
-inferType = \case
+inferType = inferTypeCtx emptyCtx
+
+inferTypeCtx ::
+  forall a r.
+  (Show a, Eq a, Member (Error TypeError) r) =>
+  Ctx r a ->
+  Term Text a ->
+  Sem r (Term Text a)
+inferTypeCtx ctx = \case
   Universe n -> pure $ Universe (succ n)
   Magic -> throw UnannotatedMagic
   Inferred -> throw UninferredTerm
-  Var v -> throw . TypeVariableNotInScope $ tshow v
-  TyAnn t ty -> typeCheck t ty >> pure ty
+  Var v -> ctx v
+  TyAnn t ty -> typeCheckCtx ctx t ty >> pure ty
   Pi d s -> do
     -- unfortunately we can't type check the domain and codomain in parallel
     -- because type checking the codomain requires reducing the domain to
@@ -103,38 +133,46 @@ inferType = \case
     domainUniverseLevel <- assertHasUniverseType (PiDomain (tshow <$> Pi d s)) d
     d' <- subsumeRuntimeError $ nf d
     codomainUniverseLevel <-
-      assertHasUniverseType (PiCodomain (tshow <$> Pi d s)) (instantiate1 (Magic `TyAnn` d') s)
+      assertHasUniverseType (PiCodomain (tshow <$> Pi d s)) (instantiate1 d' s)
     -- if both the domain and codomain are <= Universe i then we can type the
     -- function space as Universe i, by instead typing the domain and codomain
     -- each as Universe i
     pure $ Universe (max domainUniverseLevel codomainUniverseLevel)
-  -- TODO: take advantage of codomain ty
-  -- note: to do this it will probably require switching to a more traditional
-  -- type checking algorithm where we have a context because otherwise it
-  -- doesn't seem possible to reconstruct the most general type that is roughly
-  -- @pib x (nf ty) (inferType s)@. However, this will require unwrapping
-  -- the scopes all the way down, and then reconstructing them. + it will be
-  -- necessary to generate somewhat meaningful names for them. All in all,
-  -- this seems kind of hard.
-  Lam ty s -> throw $ UnannotatedLambdaExpression (tshow <$> Lam ty s)
+  Lam ty s -> do
+    void $ assertHasUniverseType (LambdaDomain (tshow <$> Lam ty s)) ty
+    ty' <- subsumeRuntimeError . nf $ ty
+    Pi ty' . toScope <$> inferTypeCtx (extendCtxUnit ty' ctx) (fromScope s)
   App a b -> do
     aTy <- inferType a
     (domainTy, rangeTyScope) <- case aTy of
       Pi d s -> pure (d, s)
       _ -> throw $ ApplicationToTermWithoutFunctionType (tshow <$> App a b) (tshow <$> aTy)
-    typeCheck b domainTy
-    pure $ instantiate1 (Magic `TyAnn` b) rangeTyScope
+    typeCheckCtx ctx b domainTy
+    subsumeRuntimeError . nf $ instantiate1 b rangeTyScope
   RecordTy m -> do
     let assertHasUniverseType' (l, t) =
           assertHasUniverseType (RecordTyWithLabel l (tshow <$> RecordTy m)) t
     levels <- sequenceErrorsParallelly (assertHasUniverseType' <$> mapToList m)
     let level = maximum (0 `ncons` levels)
     pure $ Universe level
-  Record m -> pure $ RecordTy (view #entryType <$> m)
+  Record m -> do
+    let indexMap :: Map Int (Term Text a)
+        indexMap = mapFromList $ (view #index &&& view #entryType) <$> toList m
+        intToTy =
+          fromMaybe (error "impossible index for bound variable")
+            . flip lookup indexMap
+        newCtx = extendCtxInt intToTy ctx
+    void . sequenceErrorsParallelly $
+      uncurry (typeCheckCtx newCtx)
+        . ((fromScope . view #entry) &&& (fmap F . view #entryType))
+        <$> toList m
+    pure $ RecordTy (view #entryType <$> m)
   Project t l -> do
     tTy <- inferType t
     case tTy of
-      RecordTy m -> note (ProjectionOfMissingRecordLabelTy (tshow <$> t) (tshow <$> tTy) l) $ lookup l m
+      RecordTy m ->
+        note (ProjectionOfMissingRecordLabelTy (tshow <$> t) (tshow <$> tTy) l) $
+          lookup l m
       _ -> throw $ ProjectionOfNonRecordTy (tshow <$> t) (tshow <$> tTy)
 
 -- | Does the term (first arg) have the specified type (second arg).
@@ -143,10 +181,19 @@ typeCheck ::
   Term Text a ->
   Term Text a ->
   Sem r ()
-typeCheck t ty = case t of
+typeCheck = typeCheckCtx emptyCtx
+
+typeCheckCtx ::
+  (Show a, Eq a, Member (Error TypeError) r) =>
+  Ctx r a ->
+  Term Text a ->
+  Term Text a ->
+  Sem r ()
+typeCheckCtx ctx t ty = case t of
   -- Magic is allowed to have any syntactically valid type, even if it isn't
   -- a valid type for other purposes
   Magic -> pure ()
+  -- TODO: get rid of this special case
   Lam cdty s -> do
     _ <- assertHasUniverseType (TypeAssertion (tshow <$> t) (tshow <$> ty)) ty
     tyTy <- subsumeRuntimeError $ nf ty
@@ -155,7 +202,7 @@ typeCheck t ty = case t of
       _ -> throw $ LambdaWithNonPiType (tshow <$> Lam cdty s) (tshow <$> tyTy)
   _ -> do
     let inferredTermTyNf = do
-          tTy <- inferType t
+          tTy <- inferTypeCtx ctx t
           subsumeRuntimeError $ nf tTy
         wellTypedTyNf = do
           -- we don't care about the level of the universe when checking, just
