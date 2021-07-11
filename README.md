@@ -38,6 +38,8 @@ implementing ideas related to compiler development.
     ```
 
 ## Far future ideas
+- pattern matching including view patterns
+- (co)effect system
 - Meta programming based off of lambda star
   - possibly can provide an interface for theorem proving when unification isn't
     strong enough on its own
