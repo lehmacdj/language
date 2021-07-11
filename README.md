@@ -7,17 +7,43 @@ implementing ideas related to compiler development.
 
 ## Compilation Pipeline
 1. Parsing
-2. Elaboration
+   - Creates AST from source code.
+   - Extremely basic reconstruction is performed in this phase. i.e.
+     `lambda x. y` is reconstructed to `lambda x : _. y`.
+2. Reconstruction
+   - the source language may not require everything to be written out
+     explicitly. Terms left out need to be reconstructed to obtain what was
+     actually meant.
+   - For example consider this typical definition of the identity function in
+     Haskell:
+     ```
+     id :: a -> a
+     id x = x
+     ```
+     Here we don't explcitly quantify over the type variable `a` and we also
+     don't take an argument for this quantifier. A "reconstructed" program might
+     look like
+     ```
+     id :: forall a :: *. a -> a
+     id @_ x = x
+     ```
+     where we have created both a closed type and a closed term for `id` that
+     can now be type checked without running into unbound variables.
+   - At first we will probably ignore reconstruction and skip straight to
+     elaboration, as reconstruction doesn't actually provide too strong of
+     syntactic conveniences. This does mean that we will need to explicitly pass
+     at least an `_` meaning an inferred value as explicit type applications.
+3. Elaboration
    - produces a set of constraints decorated with unification variables
-3. Unification / Inference
+4. Unification / Inference
    - uses Huet's unification algorithm to create substitutions for inferred terms
     as well as possible
    - Definitely undecideable, but we'll try our best and impose limits using
     fuel to make sure that type checking generally terminates
-4. Type Checking
+5. Type Checking
    - extremely dumb type checking algorithm that doesn't try to do any kind of
     inference
-5. Interpretation / Optimization + Compilation
+6. Interpretation / Optimization + Compilation
 
 ## TODO
 - Elaborator
