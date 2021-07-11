@@ -27,8 +27,17 @@ implementing ideas related to compiler development.
   - Error messages need to have textual representations that make sense
   - have helper methods to convert polymorphic variables into something readable
     for the end user
+  - context traces for type checking to make messages more readable. This is
+    similar to how GHC does it:
+    ```
+    type mismatch:
+    - expected: foo
+    - but was:  bar
+    in blah blah blah
+    in baz (blah blah blah)
+    ```
 
-## Far future ideas to include
+## Far future ideas
 - Meta programming based off of lambda star
   - possibly can provide an interface for theorem proving when unification isn't
     strong enough on its own
