@@ -21,7 +21,8 @@ test_inferType =
       -- inconsistent universes
       pib "x" (Universe 0) (Universe 1) `infersType` Universe 2,
       pib "x" (Universe 1) (Universe 0) `infersType` Universe 2,
-      -- TODO: basic test for lambda
+      typedLam "x" (Universe 0) (Magic `TyAnn` Universe 0)
+        `infersType` (Universe 0 `arrow` Universe 0),
       let ty = pib "x'" (Universe 0) (Universe 0)
        in (lam "x" (Var "x") `TyAnn` ty) `infersType` ty,
       ((Magic `TyAnn` pib "x" (Universe 0) (Universe 0)) `App` (Magic `TyAnn` Universe 0))
@@ -30,9 +31,10 @@ test_inferType =
        in t `throwsError` ApplicationToTermWithoutFunctionType t (Universe 1),
       recordTy' ["x" *= Universe 0, "y" *= Universe 1] `infersType` Universe 2,
       typedRecord' ["x" *= (Universe 0, Universe 1)] `infersType` recordTy' ["x" *= Universe 1],
-      typedRecord' ["x" *= (Magic, Universe 1)] `infersType` recordTy' ["x" *= Universe 1]
-      -- TODO: regression: ill typed record field
-      -- TODO: regression: type of applied pi has var substituted for applied thing
+      typedRecord' ["x" *= (Magic, Universe 1)] `infersType` recordTy' ["x" *= Universe 1],
+      typedRecord' ["x" *= (Universe 0, Universe 2)] `throwsError` TypeMismatch (Universe 0) (Universe 2) (Universe 1),
+      let app = typedLam "x" (Universe 0) (Magic `TyAnn` Var "y") `App` (Magic `TyAnn` Universe 0)
+       in typedLam "y" (Universe 0) app `infersType` pib "y" (Universe 0) (Var "y")
     ]
   where
     infersType :: Term' -> Term' -> TestTree

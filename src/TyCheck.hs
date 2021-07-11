@@ -83,11 +83,12 @@ subsumeRuntimeError = mapError RuntimeErrorWhileEvaluatingType
 
 assertHasUniverseType ::
   (Show a, Eq a, Member (Error TypeError) r) =>
+  Ctx r a ->
   UniverseTypeCheckingContext ->
   Term Text a ->
   Sem r Natural
-assertHasUniverseType context t = do
-  tTy <- inferType t
+assertHasUniverseType ctx context t = do
+  tTy <- inferTypeCtx ctx t
   case tTy of
     Universe n -> pure n
     _ -> throw . NonUniverseType context $ tshow <$> tTy
@@ -138,16 +139,19 @@ inferTypeCtx ctx = \case
     -- because type checking the codomain requires reducing the domain to
     -- normal form first. Note: we might be able to solve this by not reducing
     -- to normal form first, but this might have performance implications.
-    domainUniverseLevel <- assertHasUniverseType (PiDomain (tshow <$> Pi d s)) d
+    domainUniverseLevel <- assertHasUniverseType ctx (PiDomain (tshow <$> Pi d s)) d
     d' <- subsumeRuntimeError $ nf d
     codomainUniverseLevel <-
-      assertHasUniverseType (PiCodomain (tshow <$> Pi d s)) (instantiate1 d' s)
+      assertHasUniverseType
+        (extendCtxUnit d' ctx)
+        (PiCodomain (tshow <$> Pi d s))
+        (fromScope s)
     -- if both the domain and codomain are <= Universe i then we can type the
     -- function space as Universe i, by instead typing the domain and codomain
     -- each as Universe i
     pure $ Universe (max domainUniverseLevel codomainUniverseLevel)
   Lam ty s -> do
-    void $ assertHasUniverseType (LambdaDomain (tshow <$> Lam ty s)) ty
+    void $ assertHasUniverseType ctx (LambdaDomain (tshow <$> Lam ty s)) ty
     ty' <- subsumeRuntimeError . nf $ ty
     Pi ty' . toScope <$> inferTypeCtx (extendCtxUnit ty' ctx) (fromScope s)
   App a b -> do
@@ -159,7 +163,7 @@ inferTypeCtx ctx = \case
     subsumeRuntimeError . nf $ instantiate1 b rangeTyScope
   RecordTy m -> do
     let assertHasUniverseType' (l, t) =
-          assertHasUniverseType (RecordTyWithLabel l (tshow <$> RecordTy m)) t
+          assertHasUniverseType ctx (RecordTyWithLabel l (tshow <$> RecordTy m)) t
     levels <- sequenceErrorsParallelly (assertHasUniverseType' <$> mapToList m)
     let level = maximum (0 `ncons` levels)
     pure $ Universe level
@@ -203,7 +207,7 @@ typeCheckCtx ctx t ty = case t of
   Magic -> pure ()
   -- TODO: get rid of this special case
   Lam cdty s -> do
-    _ <- assertHasUniverseType (TypeAssertion (tshow <$> t) (tshow <$> ty)) ty
+    _ <- assertHasUniverseType ctx (TypeAssertion (tshow <$> t) (tshow <$> ty)) ty
     tyTy <- subsumeRuntimeError $ nf ty
     case tyTy of
       Pi d c -> typeCheck (instantiate1 (Magic `TyAnn` d) s) (instantiate1 (Magic `TyAnn` d) c)
@@ -215,7 +219,7 @@ typeCheckCtx ctx t ty = case t of
         wellTypedTyNf = do
           -- we don't care about the level of the universe when checking, just
           -- that there is one
-          _ <- assertHasUniverseType (TypeAssertion (tshow <$> t) (tshow <$> ty)) ty
+          _ <- assertHasUniverseType ctx (TypeAssertion (tshow <$> t) (tshow <$> ty)) ty
           subsumeRuntimeError $ nf ty
     (inferredTermTyNf', wellTypedTyNf') <-
       errorsParallelly inferredTermTyNf wellTypedTyNf

@@ -26,7 +26,9 @@ test_nf =
         runE (nf (Universe n)) === Right (Universe n :: Term'),
       -- this example is one of the smallest well typed evaluations that can
       -- be performed
-      let u0 = Universe 0 in ((lam "x" (Var "x") `TyAnn` (u0 `arrow` u0)) `App` (Magic `TyAnn` u0)) `hasNf` Magic,
+      let u0 = Universe 0
+       in ((lam "x" (Var "x") `TyAnn` (u0 `arrow` u0)) `App` (Magic `TyAnn` u0))
+            `hasNf` Magic,
       let r :: Term'
           r = record' ["x" *= Var "y"]
        in (r `Project` "x" :: Term') `hasNf` Var "y",
