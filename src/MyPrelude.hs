@@ -1,37 +1,28 @@
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-
 module MyPrelude
-  ( module ClassyPrelude,
-    module MyPrelude,
-    HasCallStack,
-    module Polysemy,
-    module Data.Generics.Labels,
+  ( -- * At its core the prelude is ClassyPrelude + some extras
+    module ClassyPrelude,
 
-    -- * lens re-exports
-    view,
+    -- * Misc functions
+    errorsParallelly,
+    sequenceErrorsParallelly,
+    fromJustEx,
+    fromEitherVia,
+    toSetOf,
+
+    -- * misc re-exports
+    module X,
   )
 where
 
 import ClassyPrelude hiding (try)
-import Control.Lens (Const (..), Getting, view)
-import Control.Monad.Except
-import Data.Generics.Labels
-import GHC.Stack
-import Polysemy
+import Control.Lens (Const (..), Getting)
+import Control.Lens as X (view)
+import Data.Generics.Labels as X
+import Data.Void as X (Void)
+import GHC.Stack as X (HasCallStack)
+import Polysemy as X
 import Polysemy.Error
 import Validation
-
-subsumeError ::
-  MonadError f n =>
-  (e -> f) ->
-  (forall m. MonadError e m => m a) ->
-  n a
-subsumeError f c = do
-  result <- runExceptT c
-  case result of
-    Left e -> throwError $ f e
-    Right r -> pure r
 
 errorsParallelly ::
   (Member (Error e) r, Semigroup e) =>
