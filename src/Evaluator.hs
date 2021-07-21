@@ -28,6 +28,7 @@ nf (Universe n) = pure $ Universe n
 nf Magic = pure Magic
 nf Inferred = pure Inferred
 nf (Var x) = pure $ Var x
+nf (MetaVar x) = pure $ MetaVar x
 nf (TyAnn a _) = nf a
 nf (Pi d s) = (Pi <$> nf d) <*> (toScope <$> nf (fromScope s))
 nf (Lam ty s) = Lam ty . toScope <$> nf (fromScope s)

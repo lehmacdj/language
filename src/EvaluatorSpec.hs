@@ -21,6 +21,8 @@ test_nf =
       pib "z" (Universe 0) (lam "x" (Var "x") `App` Var "y") `hasNf` pib "z" (Universe 0) (Var "y"),
       lam "z" (lam "x" (Var "x") `App` Var "y") `hasNf` lam "z" (Var "y"),
       Magic `hasNf` Magic,
+      testProperty "metavar evals to self" $ \i ->
+        runE (nf (MetaVar i)) === Right (MetaVar i :: Term'),
       (Magic `TyAnn` Universe 0) `hasNf` Magic,
       testProperty "Universe n is in normal form" $ \n ->
         runE (nf (Universe n)) === Right (Universe n :: Term'),

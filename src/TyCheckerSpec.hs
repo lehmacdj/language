@@ -16,6 +16,8 @@ test_inferType =
     [ testProperty "Universe n : Universe (n + 1)" $
         \n -> runE (inferType (Universe n :: Term')) === Right (Universe (n + 1)),
       Magic `throwsError` UnannotatedMagic,
+      testProperty "MetaVar's are untypable" \i ->
+        runE (inferType (MetaVar i :: Term')) === Left MetaVarLeftInTermDuringTypeChecking,
       (Magic `TyAnn` Magic) `infersType` Magic,
       Var "x" `throwsError` TypeVariableNotInScope "\"x\"",
       -- inconsistent universes

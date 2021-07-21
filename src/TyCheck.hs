@@ -62,6 +62,7 @@ data TypeError
   | -- | First term expected to have a type (second term) containing the label
     -- (third arg).
     ProjectionOfMissingRecordLabelTy Term' Term' Text
+  | MetaVarLeftInTermDuringTypeChecking
   deriving (Show, Eq, Generic)
 
 instance Pretty TypeError where
@@ -133,6 +134,7 @@ inferTypeCtx ctx = \case
   Magic -> throw UnannotatedMagic
   Inferred -> throw UninferredTerm
   Var v -> ctx v
+  MetaVar _ -> throw MetaVarLeftInTermDuringTypeChecking
   TyAnn t ty -> typeCheckCtx ctx t ty >> pure ty
   Pi d s -> do
     -- unfortunately we can't type check the domain and codomain in parallel

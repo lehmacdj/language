@@ -47,6 +47,7 @@ dependencies:
 - quickcheck-instances
 
 default-extensions:
+- BlockArguments
 - DataKinds
 - DeriveFunctor
 - DeriveGeneric

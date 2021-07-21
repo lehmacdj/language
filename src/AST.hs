@@ -63,6 +63,8 @@ data Term n a
     -- and lead to a type error.
     Inferred
   | Var a
+  | -- | Metavariables for use during unification
+    MetaVar Natural
   | -- | Type annotation. Specifies that a term should have a specific type.
     -- When extending to include general comonadic annotations, they should
     -- subsume this constructor at least eventually if applicable. The type
@@ -94,6 +96,7 @@ instance Monad (Term n) where
   Magic >>= _ = Magic
   Inferred >>= _ = Inferred
   Var v >>= f = f v
+  MetaVar i >>= _ = MetaVar i
   TyAnn a b >>= f = TyAnn (a >>= f) (b >>= f)
   Pi d s >>= f = Pi (d >>= f) (s >>>= f)
   Lam ty s >>= f = Lam (ty >>= f) (s >>>= f)
