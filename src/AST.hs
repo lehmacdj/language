@@ -7,6 +7,7 @@ import Bound.Name
 import Control.Lens
 import qualified Control.Monad
 import Data.Deriving
+import Data.Set.Lens (setOf)
 import MyPrelude
 import Numeric.Natural
 
@@ -150,7 +151,7 @@ arrow d e = Pi d (fmap fromJustEx (abstract1Name Nothing (fmap Just e)))
 
 hasNoDuplicateLabels :: Ord n => [(n, a)] -> Bool
 hasNoDuplicateLabels bindings =
-  length (toSetOf (folded . _1) bindings) == length bindings
+  length (setOf (folded . _1) bindings) == length bindings
 
 makeSmartRecordMaker ::
   Ord n => ([(n, a)] -> Term n n) -> [(n, a)] -> Maybe (Term n n)

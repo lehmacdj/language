@@ -7,7 +7,6 @@ module MyPrelude
     sequenceErrorsParallelly,
     fromJustEx,
     fromEitherVia,
-    toSetOf,
 
     -- * misc re-exports
     module X,
@@ -15,7 +14,6 @@ module MyPrelude
 where
 
 import ClassyPrelude hiding (try)
-import Control.Lens (Const (..), Getting)
 import Control.Lens as X (view)
 import Data.Generics.Labels as X
 import Data.Void as X (Void)
@@ -54,7 +52,3 @@ fromEitherVia :: Member (Error e') r => (e -> e') -> Either e a -> Sem r a
 fromEitherVia f = \case
   Left e -> throw $ f e
   Right a -> pure a
-
--- | Copied from cabal codebase
-toSetOf :: Getting (Set a) s a -> s -> Set a
-toSetOf l s = getConst (l (Const . singleton) s)
