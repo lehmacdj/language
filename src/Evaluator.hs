@@ -5,7 +5,7 @@ import Bound
 import Control.Comonad
 import qualified Data.Map as Map
 import MyPrelude
-import Polysemy.Error
+import Control.Effect.Error
 import Prettyprinter
 
 data RuntimeError
@@ -20,10 +20,10 @@ instance Pretty RuntimeError where
 
 -- | reduce a 'Term' to normal form using a lazy evaluation strategy
 nf ::
-  forall r a.
-  (Member (Error RuntimeError) r, Show a, HasCallStack) =>
+  forall m a.
+  (Eff (Error RuntimeError) m, Show a, HasCallStack) =>
   Term Text a ->
-  Sem r (Term Text a)
+  m (Term Text a)
 nf (Universe n) = pure $ Universe n
 nf Magic = pure Magic
 nf Inferred = pure Inferred
@@ -49,7 +49,7 @@ nf (Project t l) = do
         (view #index re, Project (Record m) l')
       recSubstitutions :: Map Int (Term Text a)
       recSubstitutions = mapFromList . toList $ Map.mapWithKey makeSubstitution m
-      invariantFailure = error "index is impossible, map constructed from record"
+      invariantFailure = bug "index is impossible, map constructed from record"
       instantiateIndex :: Comonad w => w Int -> Term Text a
       instantiateIndex i = fromMaybe invariantFailure $ lookup (extract i) recSubstitutions
       tyErr = throw . ProjectionOfMissingRecordLabel l $ tshow <$> t
@@ -61,9 +61,9 @@ nf (Project t l) = do
 -- * 'App' is reduced
 -- * 'TyAnn' is removed
 whnf ::
-  (Member (Error RuntimeError) r, Show a) =>
+  (Eff (Error RuntimeError) m, Show a) =>
   Term Text a ->
-  Sem r (Term Text a)
+  m (Term Text a)
 whnf (TyAnn x _) = pure x
 whnf (App f a) = do
   f' <- whnf f

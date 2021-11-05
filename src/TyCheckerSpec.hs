@@ -1,12 +1,12 @@
 module TyCheckerSpec where
 
 import AST
-import Polysemy.Error
+import Control.Effect.Error
 import Test.QuickCheck.Instances.Natural ()
 import TestPrelude
 import TyCheck
 
-runE :: Sem '[Error e] a -> Either e a
+runE :: ErrorC e Identity a -> Either e a
 runE = run . runError
 
 test_inferType :: TestTree

@@ -5,30 +5,30 @@
 
 packages:
 - completed:
-    hackage: polysemy-readline-0.1.0.0@sha256:bd049f9e5252973b8584be2bdae95e7facb3356f834b4f7b613c33a171168944,1860
+    hackage: in-other-words-0.2.0.0@sha256:8c99cc22ddfe8affe6fcf24ab088d464d5a390a6fcc9532f1552891aae95904a,5269
     pantry-tree:
-      size: 377
-      sha256: 3fce2458d298cd8fba66f9093594d7f86c194ba5e138425357f48d81c0d303cb
+      sha256: c8a79c43bc7f04af24f0cbc5f3ad795abc128e87ad23f17ecde8857a18a0b7c2
+      size: 6646
   original:
-    hackage: polysemy-readline-0.1.0.0
+    hackage: in-other-words-0.2.0.0@sha256:8c99cc22ddfe8affe6fcf24ab088d464d5a390a6fcc9532f1552891aae95904a,5269
 - completed:
-    hackage: polysemy-1.5.0.0@sha256:7edb723e7f703fe273a40e43fe33f6e8f7659fe60759e8698def1481262d314d,6246
+    hackage: in-other-words-plugin-0.1.0.0@sha256:9aecb8117226857b1cd220b4ba7d912d600e76fe40dc0c0b76328d4032b86608,2613
     pantry-tree:
-      size: 4438
-      sha256: 7b7d379751f79f0e0e5afcdf3d8092e5b8e04515710f21f514aa8f29ce4835f4
+      sha256: d7db22e5ee4342421ae293c72bc9dad3ab76f6025900ecbc954a4ef8f3c0b3c8
+      size: 689
   original:
-    hackage: polysemy-1.5.0.0@sha256:7edb723e7f703fe273a40e43fe33f6e8f7659fe60759e8698def1481262d314d,6246
+    hackage: in-other-words-plugin-0.1.0.0@sha256:9aecb8117226857b1cd220b4ba7d912d600e76fe40dc0c0b76328d4032b86608,2613
 - completed:
-    hackage: polysemy-plugin-0.3.0.0@sha256:22e7553d0fddb48d9484ba1c71d2ed825213fcb214866d9b502ee02bfb960cb4,3121
+    hackage: readline-in-other-words-0.1.0.2@sha256:73b53bc8dab07df4ee954172502de09a686a53bd404d33a6c2cf36323636ae18,2135
     pantry-tree:
-      size: 1162
-      sha256: 8d0bbea846d4410b769687daa8595ff1349efd02c1ab528a857883388dd2db45
+      sha256: 4bf1da46ea58cd50de8fa79f18b90e96b4b4062c0ec65c10fa77238e3df0eab2
+      size: 508
   original:
-    hackage: polysemy-plugin-0.3.0.0@sha256:22e7553d0fddb48d9484ba1c71d2ed825213fcb214866d9b502ee02bfb960cb4,3121
+    hackage: readline-in-other-words-0.1.0.2
 snapshots:
 - completed:
-    size: 567677
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/17/14.yaml
-    sha256: 3740f22286bf5e6e3d82f88125e1c708b6e27847211f956b530aa5d83cf39383
+    sha256: 87842ecbaa8ca9cee59a7e6be52369dbed82ed075cb4e0d152614a627e8fd488
+    size: 586069
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/18/14.yaml
   original:
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/17/14.yaml
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/18/14.yaml

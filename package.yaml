@@ -24,18 +24,20 @@ dependencies:
 - comonad
 - containers
 - deriving-compat
+- exceptions
 - generic-lens
+- haskeline
+- in-other-words
+- in-other-words-plugin
 - lens
 - megaparsec
+- monad-control
 - mtl
 - parser-combinators
-- polysemy
-- polysemy-plugin
-- polysemy-readline
 - prettyprinter
 - prettyprinter-ansi-terminal
+- readline-in-other-words
 - text
-- unliftio
 - validation-selective
 # test dependencies, trying to keep these separate even though they are required
 # by the main lib because our tests are in tree.
@@ -53,16 +55,20 @@ default-extensions:
 - DeriveGeneric
 - DeriveTraversable
 - DeriveFoldable
+- DerivingStrategies
 - DuplicateRecordFields
 - FlexibleContexts
 - GADTs
+- GeneralizedNewtypeDeriving
 - LambdaCase
 - NoImplicitPrelude
 - OverloadedLabels
 - OverloadedStrings
 - PolyKinds
+- QuantifiedConstraints
 - RankNTypes
 - ScopedTypeVariables
+- StandaloneDeriving
 - TupleSections
 - TypeApplications
 - TypeFamilies
@@ -71,10 +77,7 @@ default-extensions:
 
 ghc-options:
 - -Wall
-- -Wincomplete-uni-patterns
-- -fplugin=Polysemy.Plugin
-- -flate-specialise
-- -fspecialise-aggressively
+- -fplugin=Control.Effect.Plugin
 
 library:
   source-dirs: src

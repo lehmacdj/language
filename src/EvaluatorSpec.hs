@@ -2,11 +2,11 @@ module EvaluatorSpec where
 
 import AST
 import Evaluator
-import Polysemy.Error
+import Control.Effect.Error
 import Test.QuickCheck.Instances.Natural ()
 import TestPrelude
 
-runE :: Sem '[Error e] a -> Either e a
+runE :: ErrorC e RunC a -> Either e a
 runE = run . runError
 
 test_nf :: TestTree

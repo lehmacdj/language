@@ -18,7 +18,7 @@
 # resolver: ./custom-snapshot.yaml
 # resolver: https://example.com/snapshots/2018-01-01.yaml
 resolver:
-  url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/17/14.yaml
+  url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/18/14.yaml
 
 # User packages to be built.
 # Various formats can be used as shown in the example below.
@@ -36,14 +36,9 @@ packages:
 # forks / in-progress versions pinned to a git hash. For example:
 #
 extra-deps:
-- polysemy-readline-0.1.0.0
-- polysemy-1.5.0.0@sha256:7edb723e7f703fe273a40e43fe33f6e8f7659fe60759e8698def1481262d314d,6246
-- polysemy-plugin-0.3.0.0@sha256:22e7553d0fddb48d9484ba1c71d2ed825213fcb214866d9b502ee02bfb960cb4,3121
-# - acme-missiles-0.3
-# - git: https://github.com/commercialhaskell/stack.git
-#   commit: e7b331f14bcffb8367cd58fbfc8b40ec7642100a
-#
-# extra-deps: []
+- in-other-words-0.2.0.0@sha256:8c99cc22ddfe8affe6fcf24ab088d464d5a390a6fcc9532f1552891aae95904a,5269
+- in-other-words-plugin-0.1.0.0@sha256:9aecb8117226857b1cd220b4ba7d912d600e76fe40dc0c0b76328d4032b86608,2613
+- readline-in-other-words-0.1.0.2
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

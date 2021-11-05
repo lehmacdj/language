@@ -3,6 +3,6 @@ cradle:
     - path: "./src"
       component: "language:lib"
     - path: "./app"
-      component: "language:exe:language-exe"
+      component: "language:exe:langi"
     - path: "./test"
       component: "language:test:language-test"

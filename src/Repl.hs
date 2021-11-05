@@ -1,11 +1,11 @@
 module Repl where
 
 import AST
+import Control.Effect.Error
+import Control.Effect.Readline
 import Evaluator
 import MyPrelude
 import Parser
-import Polysemy.Error
-import Polysemy.Readline
 import Prettyprinter
 import System.Exit (exitSuccess)
 import Text.Megaparsec (eof, parse)
@@ -40,42 +40,45 @@ pCommand =
     <|> ((keyword ":parse" <|> keyword ":p") $> Parse <*> pTerm)
     <|> (Evaluate <$> pTerm)
 
-quit :: Member (Embed IO) r => Sem r ()
+quit :: Eff (Embed IO) m => m ()
 quit = do
   embed $ say "Goodbye!"
   embed exitSuccess
 
 parseCommand ::
-  Member (Error InterpreterError) r =>
+  Eff (Error InterpreterError) m =>
   String ->
-  Sem r Command
+  m Command
 parseCommand =
   fromEitherVia (PE . ParseError)
     . parse (s *> pCommand <* eof) "<interactive>"
     . pack
 
 interpretCommand ::
-  Members [Embed IO, Error InterpreterError] r =>
+  Effs [Embed IO, Error InterpreterError, Readline] m =>
   Command ->
-  Sem r ()
+  m ()
 interpretCommand = \case
   Quit -> quit
-  Parse t -> sayShow t
+  Parse t -> embed $ sayShow t
   TypeCheck t -> do
-    t' <- mapError TE $ inferType t
-    sayShow t'
+    t' <- mapError #_TE $ inferType t
+    embed $ sayShow t'
   RawEvaluate t -> do
-    t' <- mapError RE $ nf t
-    sayShow t'
+    t' <- mapError #_RE $ nf t
+    embed $ sayShow t'
   Evaluate t -> do
-    ty <- mapError TE $ inferType t
-    t' <- mapError RE $ nf t
-    say $ tshow t' <> " : " <> tshow ty
+    ty <- mapError #_TE $ inferType t
+    t' <- mapError #_RE $ nf t
+    embed $ say $ tshow t' <> " : " <> tshow ty
 
-handleErrors :: Member (Embed IO) r => Sem (Error InterpreterError : r) () -> Sem r ()
-handleErrors = either (sayErrShow . pretty) pure <=< runError
+handleErrors ::
+  (Eff (Embed IO) m, Threaders '[ErrorThreads] m p) =>
+  ErrorC InterpreterError m () ->
+  m ()
+handleErrors = either (embed . sayErrShow . pretty) pure <=< runError
 
-repl :: Members [Embed IO, Readline] r => Sem r ()
+repl :: (Threaders '[ErrorThreads] m p, Effs [Embed IO, Readline] m) => m ()
 repl = do
   commandStr <- getInputLine "λ> "
   case commandStr of

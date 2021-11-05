@@ -1,7 +1,7 @@
 module Main where
 
+import Control.Effect.Readline
 import MyPrelude
-import Polysemy.Readline
 import Repl
 
 main :: IO ()

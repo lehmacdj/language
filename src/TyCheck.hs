@@ -11,11 +11,11 @@ where
 import AST
 import Bound
 import Control.Comonad
+import Control.Effect.Error
 import Data.List.NonEmpty (NonEmpty (..))
 import Evaluator
 import MyPrelude
 import Numeric.Natural
-import Polysemy.Error
 import Prettyprinter
 
 data UniverseTypeCheckingContext
@@ -77,39 +77,39 @@ instance Semigroup TypeError where
   e <> f = MultipleTypeErrors (e :| [f])
 
 subsumeRuntimeError ::
-  Member (Error TypeError) r =>
-  Sem (Error RuntimeError : r) a ->
-  Sem r a
-subsumeRuntimeError = mapError RuntimeErrorWhileEvaluatingType
+  Eff (Error TypeError) m =>
+  InterpretErrorC RuntimeError m a ->
+  m a
+subsumeRuntimeError = mapError #_RuntimeErrorWhileEvaluatingType
 
 assertHasUniverseType ::
-  (Show a, Eq a, Member (Error TypeError) r) =>
-  Ctx r a ->
+  (Show a, Eq a, Eff (Error TypeError) m) =>
+  Ctx m a ->
   UniverseTypeCheckingContext ->
   Term Text a ->
-  Sem r Natural
+  m Natural
 assertHasUniverseType ctx context t = do
   tTy <- inferTypeCtx ctx t
   case tTy of
     Universe n -> pure n
     _ -> throw . NonUniverseType context $ tshow <$> tTy
 
-type Ctx r a = a -> Sem r (Term Text a)
+type Ctx m a = a -> m (Term Text a)
 
-emptyCtx :: (Member (Error TypeError) r, Eq a, Show a) => Ctx r a
+emptyCtx :: (Eff (Error TypeError) m, Eq a, Show a) => Ctx m a
 emptyCtx v = throw . TypeVariableNotInScope $ tshow v
 
 extendCtxUnit ::
-  (Comonad w, Member (Error TypeError) r) => Term Text a -> Ctx r a -> Ctx r (Var (w ()) a)
+  (Comonad w, Eff (Error TypeError) m) => Term Text a -> Ctx m a -> Ctx m (Var (w ()) a)
 extendCtxUnit ty cxt = \case
   B (extract -> ()) -> pure (F <$> ty)
   F a -> (F <$>) <$> cxt a
 
 extendCtxInt ::
-  (Comonad w, HasCallStack, Member (Error TypeError) r) =>
+  (Comonad w, HasCallStack, Eff (Error TypeError) m) =>
   (Int -> Term Text a) ->
-  Ctx r a ->
-  Ctx r (Var (w Int) a)
+  Ctx m a ->
+  Ctx m (Var (w Int) a)
 extendCtxInt f ctx = \case
   B n -> pure $ F <$> f (extract n)
   F a -> (F <$>) <$> ctx a
@@ -118,17 +118,17 @@ extendCtxInt f ctx = \case
 -- with that inferred type. Type inference may fail with an ambiguous type
 -- error.
 inferType ::
-  (Show a, Eq a, Member (Error TypeError) r) =>
+  (Show a, Eq a, Eff (Error TypeError) m) =>
   Term Text a ->
-  Sem r (Term Text a)
+  m (Term Text a)
 inferType = inferTypeCtx emptyCtx
 
 inferTypeCtx ::
-  forall a r.
-  (Show a, Eq a, Member (Error TypeError) r) =>
-  Ctx r a ->
+  forall a m.
+  (Show a, Eq a, Eff (Error TypeError) m) =>
+  Ctx m a ->
   Term Text a ->
-  Sem r (Term Text a)
+  m (Term Text a)
 inferTypeCtx ctx = \case
   Universe n -> pure $ Universe (succ n)
   Magic -> throw UnannotatedMagic
@@ -154,7 +154,7 @@ inferTypeCtx ctx = \case
     pure $ Universe (max domainUniverseLevel codomainUniverseLevel)
   Lam ty s -> do
     void $ assertHasUniverseType ctx (LambdaDomain (tshow <$> Lam ty s)) ty
-    ty' <- subsumeRuntimeError . nf $ ty
+    ty' <- subsumeRuntimeError $ nf ty
     Pi ty' . toScope <$> inferTypeCtx (extendCtxUnit ty' ctx) (fromScope s)
   App a b -> do
     aTy <- inferType a
@@ -162,7 +162,7 @@ inferTypeCtx ctx = \case
       Pi d s -> pure (d, s)
       _ -> throw $ ApplicationToTermWithoutFunctionType (tshow <$> App a b) (tshow <$> aTy)
     typeCheckCtx ctx b domainTy
-    subsumeRuntimeError . nf $ instantiate1 b rangeTyScope
+    subsumeRuntimeError $ nf $ instantiate1 b rangeTyScope
   RecordTy m -> do
     let assertHasUniverseType' (l, t) =
           assertHasUniverseType ctx (RecordTyWithLabel l (tshow <$> RecordTy m)) t
@@ -173,7 +173,7 @@ inferTypeCtx ctx = \case
     let indexMap :: Map Int (Term Text a)
         indexMap = mapFromList $ (view #index &&& view #entryType) <$> toList m
         intToTy =
-          fromMaybe (error "impossible index for bound variable")
+          fromMaybe (bug "impossible index for bound variable")
             . flip lookup indexMap
         newCtx = extendCtxInt intToTy ctx
     void . sequenceErrorsParallelly $
@@ -191,18 +191,18 @@ inferTypeCtx ctx = \case
 
 -- | Does the term (first arg) have the specified type (second arg).
 typeCheck ::
-  (Show a, Eq a, Member (Error TypeError) r) =>
+  (Show a, Eq a, Eff (Error TypeError) m) =>
   Term Text a ->
   Term Text a ->
-  Sem r ()
+  m ()
 typeCheck = typeCheckCtx emptyCtx
 
 typeCheckCtx ::
-  (Show a, Eq a, Member (Error TypeError) r) =>
-  Ctx r a ->
+  (Show a, Eq a, Eff (Error TypeError) m) =>
+  Ctx m a ->
   Term Text a ->
   Term Text a ->
-  Sem r ()
+  m ()
 typeCheckCtx ctx t ty = case t of
   -- Magic is allowed to have any syntactically valid type, even if it isn't
   -- a valid type for other purposes
